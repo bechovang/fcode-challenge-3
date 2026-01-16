@@ -44,7 +44,7 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 development_status:
   # Epic 1: Basic Authentication (3 stories)
   epic-1: in-progress
-  1-1-initialize-spring-boot-project: ready-for-dev
+  1-1-initialize-spring-boot-project: done
   1-2-user-registration-login: backlog
   1-3-default-admin-account: backlog
   epic-1-retrospective: optional

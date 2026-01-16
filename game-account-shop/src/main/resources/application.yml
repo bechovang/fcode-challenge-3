@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: game-account-shop
+
+  # Database configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/gameaccountshop?createDatabaseIfNotExist=true
+    username: root
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  # Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # DevTools
+  devtools:
+    restart:
+      enabled: true
+
+# Server configuration
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    com.gameaccountshop: DEBUG
+    org.springframework.security: INFO

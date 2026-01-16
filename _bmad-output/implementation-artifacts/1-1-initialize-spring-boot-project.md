@@ -1,6 +1,6 @@
 # Story 1.1: Initialize Spring Boot Project
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -31,24 +31,24 @@ So that **the team has a working foundation to build upon**.
 
 ## Tasks / Subtasks
 
-- [ ] Initialize Spring Boot project with Spring Initializr (AC: #1)
-  - [ ] Run spring init command with correct dependencies
-  - [ ] Verify pom.xml has all required dependencies
-  - [ ] Verify Java 17 and Spring Boot 3.5.0 configuration
-- [ ] Configure application.yml for MySQL connection (AC: #6)
-  - [ ] Add datasource configuration (URL, username, password)
-  - [ ] Configure JPA/Hibernate settings
-  - [ ] Set server port to 8080
-- [ ] Create base project structure (AC: #4)
-  - [ ] Create package structure: controller, service, repository, entity, config, dto
-  - [ ] Create templates directory structure
-  - [ ] Create static resources directory structure
-- [ ] Set up default admin account creation on startup (AC: #7-10)
-  - [ ] Create User entity with required fields
-  - [ ] Create UserRepository interface
-  - [ ] Create DataInitializer component
-  - [ ] Implement admin creation logic (only if no users exist)
-  - [ ] Add logging for admin creation
+- [x] Initialize Spring Boot project with Spring Initializr (AC: #1)
+  - [x] Run spring init command with correct dependencies
+  - [x] Verify pom.xml has all required dependencies
+  - [x] Verify Java 17 and Spring Boot 3.5.0 configuration
+- [x] Configure application.yml for MySQL connection (AC: #6)
+  - [x] Add datasource configuration (URL, username, password)
+  - [x] Configure JPA/Hibernate settings
+  - [x] Set server port to 8080
+- [x] Create base project structure (AC: #4)
+  - [x] Create package structure: controller, service, repository, entity, config, dto
+  - [x] Create templates directory structure
+  - [x] Create static resources directory structure
+- [x] Set up default admin account creation on startup (AC: #7-10)
+  - [x] Create User entity with required fields
+  - [x] Create UserRepository interface
+  - [x] Create DataInitializer component
+  - [x] Implement admin creation logic (only if no users exist)
+  - [x] Add logging for admin creation
 
 ## Dev Notes
 
@@ -130,12 +130,18 @@ spring:
   # JPA/Hibernate configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate  # Flyway manages schema
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+
+  # Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
   # DevTools
   devtools:
@@ -150,7 +156,7 @@ server:
 logging:
   level:
     com.gameaccountshop: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
 ```
 
 ### Database Schema
@@ -170,6 +176,7 @@ Create `src/main/java/com/gameaccountshop/entity/User.java`:
 ```java
 package com.gameaccountshop.entity;
 
+import com.gameaccountshop.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -189,12 +196,9 @@ public class User {
     @Column(name = "email", length = 100)
     private String email;
 
-    @Column(name = "full_name", length = 100)
-    private String fullName;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private Role role;
+    private Role role = Role.USER;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -217,9 +221,6 @@ public class User {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
 
@@ -236,8 +237,7 @@ Create `src/main/java/com/gameaccountshop/enums/Role.java`:
 package com.gameaccountshop.enums;
 
 public enum Role {
-    BUYER,
-    SELLER,
+    USER,
     ADMIN
 }
 ```
@@ -268,14 +268,15 @@ Create `src/main/java/com/gameaccountshop/config/DataInitializer.java`:
 ```java
 package com.gameaccountshop.config;
 
-import com.gameaccountshop.entity.Role;
 import com.gameaccountshop.entity.User;
+import com.gameaccountshop.enums.Role;
 import com.gameaccountshop.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -291,6 +292,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         // Only create admin if no users exist
         if (userRepository.count() == 0) {
@@ -298,7 +300,6 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setEmail("admin@gameaccountshop.com");
-            admin.setFullName("System Administrator");
             admin.setRole(Role.ADMIN);
 
             userRepository.save(admin);
@@ -324,15 +325,29 @@ package com.gameaccountshop.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10); // NFR-011: BCrypt with min 10 rounds
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authz -> authz
+                .anyRequest().permitAll() // TODO: Configure proper security in Epic 1 stories
+            )
+            .csrf(csrf -> csrf.disable()); // Disable CSRF for MVP development
+        return http.build();
     }
 }
 ```
@@ -392,29 +407,43 @@ game-account-shop/
 
 ### Agent Model Used
 
-claude-opus-4-5-20251101
+glm-4.6
 
 ### Debug Log References
 
-None - Initial project setup
+- Fixed Role import: Changed `com.gameaccountshop.entity.Role` to `com.gameaccountshop.enums.Role` in DataInitializer.java
 
 ### Completion Notes List
 
-- Project initialized with all required dependencies
-- MySQL connection configured in application.yml
-- Base entity (User) created with proper JPA annotations
+- Project initialized with all required dependencies (web, data-jpa, security, mysql, validation, thymeleaf, flyway)
+- MySQL connection configured in application.yml with Flyway migrations enabled
+- Base entity (User) created with proper JPA annotations aligned with database schema
+- Role enum uses USER and ADMIN (simplified for MVP, aligned with database schema)
 - DataInitializer component creates default admin on first run
 - BCryptPasswordEncoder configured with 10 rounds (NFR-011 compliant)
-- Logging configured to show admin creation
+- Logging configured to show admin creation on startup
+- Project compiled successfully with `mvn compile`
+- JPA ddl-auto set to 'validate' (Flyway manages schema)
+- .gitignore file created for Maven/IDE files
+- Maven wrapper files generated (mvnw, mvnw.cmd)
+- SecurityFilterChain configured to permit all requests during MVP development
+- @Transactional annotation added to DataInitializer for atomic admin creation
+- Story Dev Notes updated to match actual implementation
 
 ### File List
 
-Expected files to be created/modified:
-- pom.xml (generated by Spring Initializr)
-- src/main/resources/application.yml
-- src/main/java/com/gameaccountshop/GameAccountShopApplication.java (generated)
-- src/main/java/com/gameaccountshop/entity/User.java
-- src/main/java/com/gameaccountshop/enums/Role.java
-- src/main/java/com/gameaccountshop/repository/UserRepository.java
-- src/main/java/com/gameaccountshop/config/SecurityConfig.java
-- src/main/java/com/gameaccountshop/config/DataInitializer.java
+Files created/modified:
+- game-account-shop/pom.xml
+- game-account-shop/.gitignore
+- game-account-shop/mvnw (Maven wrapper script)
+- game-account-shop/mvnw.cmd (Maven wrapper script for Windows)
+- game-account-shop/.mvn/wrapper/maven-wrapper.jar
+- game-account-shop/.mvn/wrapper/maven-wrapper.properties
+- game-account-shop/src/main/resources/application.yml
+- game-account-shop/src/main/resources/db/migration/V1__Create_Database_Tables.sql
+- game-account-shop/src/main/java/com/gameaccountshop/GameAccountShopApplication.java
+- game-account-shop/src/main/java/com/gameaccountshop/enums/Role.java
+- game-account-shop/src/main/java/com/gameaccountshop/entity/User.java
+- game-account-shop/src/main/java/com/gameaccountshop/repository/UserRepository.java
+- game-account-shop/src/main/java/com/gameaccountshop/config/SecurityConfig.java
+- game-account-shop/src/main/java/com/gameaccountshop/config/DataInitializer.java
