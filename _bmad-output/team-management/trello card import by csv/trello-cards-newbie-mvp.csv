@@ -1,0 +1,578 @@
+Card Name,Card Description,Labels,List Name
+1.1 Initialize Spring Boot Project,"**Description:** Initialize the Spring Boot project using Spring Initializr with all required dependencies for the newbie MVP.
+
+**User Story:**
+As a developer, I want to initialize the Spring Boot project with all required dependencies, So that the team has a working foundation to build upon.
+
+**Acceptance Criteria:**
+- Spring Boot 3.5.0 project created with Java 17
+- Dependencies: web, data-jpa, security, mysql, validation, thymeleaf
+- Package structure: com.gameaccountshop
+- Maven wrapper included
+- Project runs on port 8080
+- MySQL connection configured in application.yml
+
+**Command:**
+```bash
+spring init --dependencies=web,data-jpa,security,mysql,validation,thymeleaf --build=maven --java-version=17 --boot-version=3.5.0 --package-name=com.gameaccountshop game-account-shop
+```
+
+**Database Setup:**
+- MySQL 8.0
+- Database name: gameaccountshop
+
+**Technical Notes:**
+- Default admin account should be created after first run
+- Configure application.yml with MySQL connection",Backend,Sprint 1
+1.2 User Registration & Login,"**Description:** Create user registration and login functionality with BCrypt password hashing.
+
+**User Story:**
+As a guest user, I want to register a new account and log in, So that I can access the platform.
+
+**Acceptance Criteria:**
+
+*Registration:*
+- User entity created (id, username, password, email, role, created_at)
+- UserRepository created
+- UserService with BCrypt password hashing (10 rounds)
+- Registration form (register.html)
+- POST /auth/register endpoint
+- Validate username (unique), password (min 6 chars), email
+- Assign role ""USER"" on registration
+- Success message: ""Đăng ký thành công!""
+- Error for duplicate username: ""Tên đăng nhập đã tồn tại""
+- Error for short password: ""Mật khẩu phải có ít nhất 6 ký tự""
+- Redirect to home page after success
+
+*Login:*
+- SecurityConfig created with BCrypt
+- Login form (login.html)
+- POST /auth/login endpoint
+- Session creation on successful login
+- 30-minute session timeout
+- Error: ""Tên đăng nhập hoặc mật khẩu không đúng""
+- Redirect to home page after login
+- Display username in navigation when logged in
+
+*Logout:*
+- Logout button in navigation
+- POST /auth/logout endpoint
+- Session invalidation
+- Redirect to home page
+- Success message: ""Đăng xuất thành công!""
+
+**Database Tables:**
+```sql
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  email VARCHAR(100) NOT NULL,
+  role VARCHAR(20) DEFAULT 'USER',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```",Backend,Sprint 1
+1.3 Default Admin Account,"**Description:** Create default admin account (admin/admin123) on first startup if database is empty.
+
+**User Story:**
+As a system administrator, I want a default admin account to be created when the system first starts, So that I can access admin features without manual database setup.
+
+**Acceptance Criteria:**
+- Check if users table is empty on startup
+- Create admin account if empty (only on first run)
+- Username: admin
+- Password: admin123 (hashed with BCrypt)
+- Role: ADMIN
+- Log message when default admin created
+- Don't create if users already exist
+- No additional admin accounts created on subsequent startups
+
+**Implementation:**
+```java
+@Component
+public class DataInitializer implements CommandLineRunner {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Override
+    public void run(String... args) {
+        if (userRepository.count() == 0) {
+            User admin = new User();
+            admin.setUsername(""admin"");
+            admin.setPassword(passwordEncoder.encode(""admin123""));
+            admin.setRole(""ADMIN"");
+            userRepository.save(admin);
+            log.info(""Default admin account created: admin/admin123"");
+        }
+    }
+}
+```",Backend,Sprint 1
+2.1 Create Listing (Simplified),"**Description:** Allow logged-in users to create simplified game account listings.
+
+**User Story:**
+As a logged-in user (seller), I want to create a new game account listing, So that buyers can see my account for sale.
+
+**Acceptance Criteria:**
+- GameAccount entity created
+- GameAccountRepository created
+- ListingService created
+- Create listing form (create-listing.html) with simplified fields:
+  - Game Name (text - e.g., ""Liên Minh Huyền Thoại"", ""Valorant"")
+  - Rank/Level (text - e.g., ""Gold"", ""Diamond"")
+  - Price (number in VNĐ)
+  - Description (textarea)
+- POST /listings endpoint
+- Status set to PENDING on creation
+- seller_id set to current user
+- created_at timestamp set
+- Success message: ""Đăng bán thành công! Chờ admin duyệt.""
+- Redirect to home page after success
+- Validation: all fields required (""Vui lòng điền đầy đủ thông tin"")
+- Validation: price > 0 (""Giá bán phải lớn hơn 0"")
+
+**Database Tables:**
+```sql
+CREATE TABLE game_accounts (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  game_name VARCHAR(100) NOT NULL,
+  rank VARCHAR(50) NOT NULL,
+  price DECIMAL(10, 0) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) DEFAULT 'PENDING',
+  seller_id BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  sold_at TIMESTAMP NULL,
+  FOREIGN KEY (seller_id) REFERENCES users(id)
+);
+```",Full-Stack,Sprint 2
+2.2 Browse Listings with Search/Filter,"**Description:** Public page showing all approved listings with search and filter functionality.
+
+**User Story:**
+As a guest or buyer, I want to browse and search listings, So that I can find accounts I want to buy.
+
+**Acceptance Criteria:**
+- GET /listings endpoint (public access)
+- Query: WHERE status = 'APPROVED'
+- listings.html template with:
+  - Search box (search by game name)
+  - Filter dropdown (by rank)
+  - Listing cards showing: Game Name, Rank/Level, Price, Seller username
+- Order by created_at DESC (newest first)
+- Search uses SQL LIKE: WHERE game_name LIKE '%search%'
+- Filter by rank: AND rank = :selectedRank
+- Both search and filter can work together
+- Message: ""Không tìm thấy tài khoản nào"" if no results
+- Each listing card links to detail page
+
+**Implementation:**
+```java
+@GetMapping(""/listings"")
+public String listings(@RequestParam(required = false) String search,
+                      @RequestParam(required = false) String rank,
+                      Model model) {
+    List<GameAccount> listings = listingService.findApprovedListings(search, rank);
+    model.addAttribute(""listings"", listings);
+    return ""listings"";
+}
+
+// Query: SELECT * FROM game_accounts
+//        WHERE status = 'APPROVED'
+//        AND (:search IS NULL OR game_name LIKE %:search%)
+//        AND (:rank IS NULL OR rank = :rank)
+//        ORDER BY created_at DESC
+```",Frontend,Sprint 2
+2.3 Listing Details with Simple Rating,"**Description:** Show full details of a listing with seller ratings and allow buyers to rate after purchase.
+
+**User Story:**
+As a guest or buyer, I want to view detailed information and ratings for a listing, So that I can decide if I want to purchase it.
+
+**Acceptance Criteria:**
+- GET /listings/{id} endpoint
+- listing-details.html template
+- Display all listing info:
+  - Game Name, Rank/Level, Price, Description
+  - Seller's username (clickable to profile)
+  - Seller's average rating (★★★★☆)
+  - Number of ratings (e.g., ""12 đánh giá"")
+- Show ""Mua ngay"" button if APPROVED
+- Hide/disable button if SOLD
+- Message: ""Tài khoản này đã được bán"" if SOLD
+- Rating form (if logged in and purchased):
+  - 1-5 star selection
+  - Optional short comment
+- Create Review record on submit
+- Recalculate seller's average rating
+- Success message: ""Cảm ơn đã đánh giá!""
+
+**Database Add:**
+```sql
+CREATE TABLE reviews (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  transaction_id BIGINT NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  seller_id BIGINT NOT NULL,
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (transaction_id) REFERENCES transactions(id),
+  FOREIGN KEY (buyer_id) REFERENCES users(id),
+  FOREIGN KEY (seller_id) REFERENCES users(id),
+  UNIQUE (transaction_id) -- one review per transaction
+);
+
+-- Average rating query:
+SELECT AVG(rating) FROM reviews WHERE seller_id = :sellerId
+```",Full-Stack,Sprint 2
+2.4 Admin Approve/Reject Listings,"**Description:** Admin page to approve or reject pending listings.
+
+**User Story:**
+As an admin user, I want to approve or reject pending listings, So that the marketplace shows only quality listings.
+
+**Acceptance Criteria:**
+- GET /admin/review endpoint (ADMIN only)
+- Query: WHERE status = 'PENDING'
+- admin-review.html template
+- Display for each pending listing:
+  - Game Name, Rank, Price, Seller username, Description, Created Date
+  - Approve button
+  - Reject button with reason input
+- PUT /admin/listings/{id}/approve:
+  - Update status to APPROVED
+  - Remove from review queue
+  - Success message: ""Đã duyệt tài khoản""
+- PUT /admin/listings/{id}/reject:
+  - Prompt for rejection reason
+  - Update status to REJECTED
+  - Store rejection reason
+  - Remove from review queue
+  - Success message: ""Đã từ chối tài khoản""
+- Message: ""Không có tài khoản nào chờ duyệt"" if empty
+
+**Database Add:**
+```sql
+ALTER TABLE game_accounts ADD COLUMN rejection_reason TEXT;
+```",Full-Stack,Sprint 2
+2.5 Mark Listing as ""Sold"","**Description:** Automatically mark listings as SOLD after purchase completion.
+
+**User Story:**
+As an admin or system, I want to mark a listing as sold after purchase, So that buyers know it's no longer available.
+
+**Acceptance Criteria:**
+- After payment verification, listing status updates to SOLD
+- Set sold_at timestamp
+- Sold listings no longer appear in browse results
+- Detail page shows ""ĐÃ BÁN"" badge
+- ""Mua ngay"" button disabled for SOLD listings
+- CSS badge with red/orange background for visual emphasis
+
+**Implementation:**
+```java
+// Called after payment verification
+public void markListingAsSold(Long listingId) {
+    GameAccount listing = gameAccountRepository.findById(listingId)
+        .orElseThrow();
+    listing.setStatus(""SOLD"");
+    listing.setSoldAt(LocalDateTime.now());
+    gameAccountRepository.save(listing);
+}
+```
+
+**Simple status update:**
+```sql
+UPDATE game_accounts
+SET status = 'SOLD', sold_at = NOW()
+WHERE id = :id
+```
+
+**CSS Badge:**
+```css
+.badge-sold {
+    background-color: #dc3545;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+}
+```",Backend,Sprint 2
+3.1 Buyer Click ""Buy"","**Description:** Buyer clicks Buy Now to initiate purchase flow and create transaction record.
+
+**User Story:**
+As a logged-in buyer, I want to click ""Buy Now"" to initiate purchase, So that I can proceed to payment.
+
+**Acceptance Criteria:**
+- Transaction entity created
+- TransactionRepository created
+- POST /listings/{id}/buy endpoint (USER only, not seller)
+- Create transaction record with:
+  - listing_id, buyer_id, seller_id captured
+  - amount = listing price
+  - commission = amount * 0.10 (10%)
+  - status = PENDING
+  - created_at timestamp
+- Redirect to payment page
+- Cannot buy own listing (button hidden)
+- Button hidden if listing not APPROVED
+- Store transaction ID in session
+
+**Database Tables:**
+```sql
+CREATE TABLE transactions (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  listing_id BIGINT NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  seller_id BIGINT NOT NULL,
+  amount DECIMAL(10, 0) NOT NULL,
+  commission DECIMAL(10, 0) NOT NULL,
+  status VARCHAR(20) DEFAULT 'PENDING',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (listing_id) REFERENCES game_accounts(id),
+  FOREIGN KEY (buyer_id) REFERENCES users(id),
+  FOREIGN KEY (seller_id) REFERENCES users(id)
+);
+```",Backend,Sprint 3
+3.2 Show VNPay QR Code,"**Description:** Display VNPay QR code and payment instructions to buyer.
+
+**User Story:**
+As a buyer, I want to see a VNPay QR code and payment instructions, So that I can pay using my phone.
+
+**Acceptance Criteria:**
+- payment.html template
+- Display payment details:
+  - Listing price (e.g., 500,000 VNĐ)
+  - Platform fee 10% (e.g., 50,000 VNĐ)
+  - Total amount (e.g., 550,000 VNĐ)
+  - Transaction ID
+- Display QR code image (static/sample for MVP)
+- Payment instructions:
+  - ""Mở ứng dụng VNPay""
+  - ""Quét mã QR bên dưới""
+  - ""Nhập số tiền: [total amount]""
+  - ""Nội dung: [transaction ID]""
+- Message: ""Sau khi thanh toán, admin sẽ xác nhận và gửi thông tin tài khoản qua email""
+- ""Tôi đã thanh toán"" button (notifies admin - optional)
+
+**Technical Notes:**
+- For MVP: Use a static/sample QR code image
+- No VNPay API integration needed yet
+- Display QR code as <img> tag
+- Store transaction ID in session for reference
+- Can use QR code library (e.g., zxing) if dynamic QR needed
+
+**HTML Template:**
+```html
+<div class=""payment-details"">
+    <p>Giá tài khoản: <strong>500,000 VNĐ</strong></p>
+    <p>Phí nền tảng (10%): <strong>50,000 VNĐ</strong></p>
+    <p>Tổng cộng: <strong>550,000 VNĐ</strong></p>
+    <p>Mã giao dịch: <strong>#12345</strong></p>
+</div>
+<img src=""/images/vnpay-qr-sample.png"" alt=""VNPay QR Code"">
+<div class=""instructions"">
+    <p>1. Mở ứng dụng VNPay</p>
+    <p>2. Quét mã QR bên dưới</p>
+    <p>3. Nhập số tiền: 550000</p>
+    <p>4. Nội dung: #12345</p>
+</div>
+```",Frontend,Sprint 3
+3.3 Admin Verify & Send to Gmail,"**Description:** Admin manually verifies VNPay payments and sends account credentials to buyer's email.
+
+**User Story:**
+As an admin, I want to verify payment and send account credentials to buyer's email, So that the buyer receives their purchase securely.
+
+**Acceptance Criteria:**
+- GET /admin/payments endpoint (ADMIN only)
+- Query: WHERE status = 'PENDING'
+- admin-payments.html template
+- Display for each pending transaction:
+  - Transaction ID
+  - Listing info (Game Name, Rank)
+  - Buyer username and email
+  - Seller username
+  - Amount (listing price + commission)
+  - Created Date
+  - ""Verify & Send"" button
+- On ""Verify & Send"" click:
+  - Prompt for account credentials:
+    - Username
+    - Password
+    - Additional notes (optional)
+  - Update transaction status to VERIFIED
+  - Update listing status to SOLD
+  - Set sold_at timestamp
+  - Send credentials to buyer's email via JavaMail/SMTP
+  - Email contains:
+    - Account username
+    - Account password
+    - Warning: ""Vui lòng đổi mật khẩu ngay sau khi đăng nhập""
+    - Transaction details
+  - Success message: ""Đã xác nhận và gửi thông tin qua email""
+
+**Email Config (application.yml):**
+```yaml
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+```
+
+**JavaMail Service:**
+```java
+@Service
+public class EmailService {
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public void sendCredentials(String toEmail, String username,
+                                String password, String notes) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject(""Thông tin tài khoản game - Game Account Shop"");
+        message.setText(""Username: "" + username + ""\n"" +
+                       ""Password: "" + password + ""\n"" +
+                       ""\nVui lòng đổi mật khẩu ngay sau khi đăng nhập!\n"" +
+                       (notes != null ? ""\nGhi chú: "" + notes : """"));
+        mailSender.send(message);
+    }
+}
+```
+
+**For Testing:**
+- Use Gmail App Password
+- Or use test SMTP service like Mailtrap",Backend,Sprint 3
+4.1 Simple Admin Dashboard,"**Description:** Admin dashboard with key platform statistics and quick links.
+
+**User Story:**
+As an admin user, I want to view a dashboard with key statistics, So that I can understand the platform's activity.
+
+**Acceptance Criteria:**
+- GET /admin/dashboard endpoint (ADMIN only)
+- admin-dashboard.html template
+- Statistics cards (real-time from database):
+  - Total Users (COUNT FROM users)
+  - Total Listings (COUNT FROM game_accounts)
+  - Pending Listings (COUNT WHERE status='PENDING')
+  - Sold Listings (COUNT WHERE status='SOLD')
+  - Total Transactions (COUNT FROM transactions)
+  - Total Revenue (SUM amount WHERE status='VERIFIED')
+- Quick links section:
+  - ""Xem Listings chờ duyệt"" → /admin/review
+  - ""Xem Thanh toán chờ xác nhận"" → /admin/payments
+  - ""Quản lý Users"" → /admin/users
+- Refresh button to reload stats
+- Use Bootstrap cards for layout
+
+**Queries:**
+```sql
+-- Total Users
+SELECT COUNT(*) FROM users
+
+-- Total Listings
+SELECT COUNT(*) FROM game_accounts
+
+-- Pending Listings
+SELECT COUNT(*) FROM game_accounts WHERE status = 'PENDING'
+
+-- Sold Listings
+SELECT COUNT(*) FROM game_accounts WHERE status = 'SOLD'
+
+-- Total Transactions
+SELECT COUNT(*) FROM transactions
+
+-- Total Revenue
+SELECT SUM(amount) FROM transactions WHERE status = 'VERIFIED'
+```",Frontend,Sprint 4
+4.2 Seller Profile Page,"**Description:** Public profile page showing seller info, ratings, and their listings.
+
+**User Story:**
+As a buyer or visitor, I want to view a seller's profile and their listings, So that I can trust the seller and see their other accounts.
+
+**Acceptance Criteria:**
+- GET /seller/{id} or /seller/{username} endpoint (public)
+- seller-profile.html template
+- Display seller's information:
+  - Username (with ""Đã xác thực"" ✓ badge if verified)
+  - Member since (registration date)
+  - Average rating (★★★★☆)
+  - Total sales count (COUNT WHERE seller_id AND status='SOLD')
+  - Total listings count
+- ""Tài khoản đang bán"" section:
+  - All APPROVED listings by this seller
+  - Each shows: Game Name, Rank, Price
+  - Links to detail pages
+- ""Đã bán"" section:
+  - Count of sold listings
+- Query: WHERE seller_id = :sellerId AND status = 'APPROVED'
+- Order by created_at DESC
+
+**Database Add (for verified badge):**
+```sql
+ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;
+```
+
+**Queries:**
+```sql
+-- Get seller info
+SELECT * FROM users WHERE id = :sellerId
+
+-- Get seller's active listings
+SELECT * FROM game_accounts
+WHERE seller_id = :sellerId AND status = 'APPROVED'
+ORDER BY created_at DESC
+
+-- Get seller's total sales
+SELECT COUNT(*) FROM game_accounts
+WHERE seller_id = :sellerId AND status = 'SOLD'
+
+-- Get seller's average rating
+SELECT AVG(rating) FROM reviews
+WHERE seller_id = :sellerId
+```",Frontend,Sprint 4
+4.3 My Purchases Page (Optional),"**Description:** Buyer page showing all their purchased accounts with transaction status.
+
+**User Story:**
+As a buyer, I want to view my purchased accounts, So that I can see what I've bought.
+
+**Acceptance Criteria:**
+- GET /my-purchases endpoint (USER only)
+- my-purchases.html template
+- Display all transactions where buyer_id = current user
+- Each transaction shows:
+  - Listing info (Game Name, Rank, Price)
+  - Transaction date
+  - Status (Pending, Verified, Completed)
+  - Seller username
+  - Status-specific messages:
+    - If PENDING: ""Chờ admin xác nhận thanh toán""
+    - If VERIFIED: ""Đã gửi email thông tin""
+    - If COMPLETED: ""Hoàn thành""
+- Order by created_at DESC (newest first)
+
+**Query:**
+```sql
+SELECT t.*, g.game_name, g.rank
+FROM transactions t
+JOIN game_accounts g ON t.listing_id = g.id
+WHERE t.buyer_id = :buyerId
+ORDER BY t.created_at DESC
+```
+
+**Status Display Logic:**
+```html
+<span th:if=""${transaction.status == 'PENDING'}"" class=""badge-warning"">
+    Chờ admin xác nhận thanh toán
+</span>
+<span th:if=""${transaction.status == 'VERIFIED'}"" class=""badge-info"">
+    Đã gửi email thông tin
+</span>
+<span th:if=""${transaction.status == 'COMPLETED'}"" class=""badge-success"">
+    Hoàn thành
+</span>
+```",Frontend,Sprint 4

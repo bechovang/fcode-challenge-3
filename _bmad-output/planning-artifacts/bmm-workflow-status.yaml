@@ -1,0 +1,97 @@
+# BMad Workflow Status Tracking
+# Generated: 2026-01-16
+# Project: fcode project - Game Account Shop
+
+generated: "2026-01-16"
+project: "fcode project"
+project_type: "Game Account Shop - A web-based trading platform for buying and selling game accounts with Java Spring Boot backend and HTML/CSS/JS frontend"
+selected_track: "BMad Method"
+field_type: "greenfield"
+workflow_path: "method-greenfield.yaml"
+
+workflow_status:
+  # Phase 1: Analysis (Optional)
+  - phase: 1
+    name: "Analysis"
+    id: "product-brief"
+    name: "Product Brief"
+    status: "{planning_artifacts}/product-brief-fcode project-2026-01-16.md"
+    agent: "analyst"
+    command: "/bmad:bmm:workflows:create-product-brief"
+    note: "Strategic product planning - Selected by user"
+    completed: "2026-01-16"
+
+  # Phase 2: Planning (Required)
+  - phase: 2
+    name: "Planning"
+    id: "prd"
+    name: "Product Requirements Document"
+    status: "{planning_artifacts}/prd.md"
+    agent: "pm"
+    command: "/bmad:bmm:workflows:create-prd"
+    output: "Product Requirements Document with FRs and NFRs"
+    completed: "2026-01-16"
+
+  - phase: 2
+    name: "Planning"
+    id: "create-ux-design"
+    name: "UX Design"
+    status: "conditional"
+    condition: "if_has_ui"
+    agent: "ux-designer"
+    command: "/bmad:bmm:workflows:create-ux-design"
+    note: "Determined after PRD - user/agent decides if needed"
+
+  # Phase 3: Solutioning (Required)
+  - phase: 3
+    name: "Solutioning"
+    id: "create-architecture"
+    name: "System Architecture"
+    status: "{planning_artifacts}/architecture.md"
+    agent: "architect"
+    command: "/bmad:bmm:workflows:create-architecture"
+    output: "System architecture document"
+    note: "Complete system design for greenfield projects"
+    completed: "2026-01-16"
+
+  - phase: 3
+    name: "Solutioning"
+    id: "create-epics-and-stories"
+    name: "Epics and Stories"
+    status: "required"
+    agent: "pm"
+    command: "/bmad:bmm:workflows:create-epics-and-stories"
+    note: "Break down PRD into implementable epics and stories with full context"
+
+  - phase: 3
+    name: "Solutioning"
+    id: "test-design"
+    name: "Test Design"
+    status: "optional"
+    agent: "tea"
+    command: "/bmad:bmm:workflows:testarch-test-design"
+    output: "System-level testability review"
+
+  - phase: 3
+    name: "Solutioning"
+    id: "implementation-readiness"
+    name: "Implementation Readiness Check"
+    status: "required"
+    agent: "architect"
+    command: "/bmad:bmm:workflows:check-implementation-readiness"
+    note: "Validates PRD + Architecture + Epics + UX (optional)"
+
+  # Phase 4: Implementation
+  - phase: 4
+    name: "Implementation"
+    id: "sprint-planning"
+    name: "Sprint Planning"
+    status: "required"
+    agent: "sm"
+    command: "/bmad:bmm:workflows:sprint-planning"
+    note: "Creates sprint plan - subsequent work tracked there"
+
+# Next workflow to execute
+next_workflow: "implementation-readiness"
+next_agent: "architect"
+next_command: "/bmad:bmm:workflows:check-implementation-readiness"

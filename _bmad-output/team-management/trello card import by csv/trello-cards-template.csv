@@ -1,0 +1,224 @@
+Card Name,Card Description,Labels,List Name
+1.1 Initialize Spring Boot Project,"**Description:** Initialize the Spring Boot project using Spring Initializr with all required dependencies.
+
+**Acceptance Criteria:**
+- Spring Boot 3.5.0 project created with Java 17
+- Dependencies: web, data-jpa, security, mysql, validation, thymeleaf
+- Package: com.gameaccountshop
+- Maven wrapper included
+- Runs on port 8080
+- MySQL connection configured
+
+**Command:**
+```bash
+spring init --dependencies=web,data-jpa,security,mysql,validation,thymeleaf --build=maven --java-version=17 --boot-version=3.5.0 --package-name=com.gameaccountshop game-account-shop
+```",Backend,Sprint 1
+1.2 User Registration,"**Description:** Create user registration with username, password, email. Password must be hashed with BCrypt.
+
+**Acceptance Criteria:**
+- User entity created
+- UserRepository created
+- UserService with BCrypt password hashing
+- Registration form (register.html)
+- AuthController with POST /auth/register
+- Success message: Đăng ký thành công!
+- Error for duplicate username
+- Error for short password (<6 chars)
+- Redirect to login after success
+
+**Database Tables:**
+- users (id, username, password, email, role, created_at)",Backend,Sprint 1
+1.3 User Login,"**Description:** Create login functionality with username/password authentication using Spring Security.
+
+**Acceptance Criteria:**
+- SecurityConfig created with BCrypt
+- Login form (login.html)
+- POST /auth/login endpoint
+- Session creation on successful login
+- 30-minute session timeout
+- Error: Tên đăng nhập hoặc mật khẩu không đúng
+- Redirect to home page after login
+- Display username in navigation when logged in",Backend,Sprint 1
+1.4 User Logout,"**Description:** Implement logout functionality that invalidates the session.
+
+**Acceptance Criteria:**
+- Logout button in navigation
+- POST /auth/logout endpoint
+- Session invalidation
+- Redirect to login page
+- Success message: Đăng xuất thành công!",Backend,Sprint 1
+1.5 Default Admin Account,"**Description:** Create default admin account (admin/admin123) on first startup if database is empty.
+
+**Acceptance Criteria:**
+- Check if users table is empty on startup
+- Create admin account if empty
+- Username: admin, Password: admin123
+- Role: ADMIN
+- Log message when default admin created
+- Don't create if users already exist",Backend,Sprint 1
+2.1 Create Listing,"**Description:** Allow logged-in users to create game account listings with game name, rank, level, price, description.
+
+**Acceptance Criteria:**
+- GameAccount entity created
+- GameAccountRepository created
+- ListingService created
+- Create listing form (create-listing.html)
+- POST /listings endpoint
+- Status set to PENDING on creation
+- seller_id set to current user
+- Success message: Đăng bán thành công! Chờ admin duyệt.
+- Validation: all fields required
+- Validation: price > 0
+
+**Database Tables:**
+- game_accounts (id, game_name, account_name, rank, level, price, description, status, seller_id, created_at, sold_at)",Full-Stack,Sprint 2
+2.2 View My Listings,"**Description:** Show logged-in user all their listings with status.
+
+**Acceptance Criteria:**
+- GET /my-listings endpoint
+- Query: WHERE seller_id = current_user
+- my-listings.html template
+- Display: Game Name, Rank, Price, Status, Date
+- Order by created_at DESC
+- Message: Bạn chưa có tài khoản nào if empty",Frontend,Sprint 2
+2.3 Browse Approved Listings,"**Description:** Public page showing all approved listings.
+
+**Acceptance Criteria:**
+- GET /listings endpoint
+- Query: WHERE status = 'APPROVED'
+- listings.html template
+- Display: Game Name, Rank, Price, Seller
+- Order by created_at DESC
+- Message: Chưa có tài khoản nào if empty
+- Each listing links to detail page",Frontend,Sprint 2
+2.4 Listing Details,"**Description:** Show full details of a specific listing.
+
+**Acceptance Criteria:**
+- GET /listings/{id} endpoint
+- listing-details.html template
+- Display all listing information
+- Show Mua ngay button (if APPROVED)
+- Hide/disable button (if SOLD)
+- Message: Tài khoản này đã được bán (if SOLD)",Frontend,Sprint 2
+2.5 Admin Review Queue,"**Description:** Admin page to view all pending listings for approval.
+
+**Acceptance Criteria:**
+- GET /admin/review endpoint (ADMIN only)
+- Query: WHERE status = 'PENDING'
+- admin-review.html template
+- Display: Game Name, Rank, Price, Seller, Date
+- Approve button for each listing
+- Reject button for each listing
+- Message: Không có tài khoản nào chờ duyệt if empty",Full-Stack,Sprint 2
+2.6 Approve Listing,"**Description:** Admin can approve pending listings.
+
+**Acceptance Criteria:**
+- PUT /admin/listings/{id}/approve endpoint (ADMIN only)
+- Update status to APPROVED
+- Remove from review queue
+- Success message: Đã duyệt tài khoản
+- Refresh page to show remaining",Full-Stack,Sprint 2
+2.7 Reject Listing,"**Description:** Admin can reject pending listings with a reason.
+
+**Acceptance Criteria:**
+- PUT /admin/listings/{id}/reject endpoint (ADMIN only)
+- Prompt for rejection reason
+- Update status to REJECTED
+- Store rejection reason
+- Remove from review queue
+- Success message: Đã từ chối tài khoản",Full-Stack,Sprint 2
+3.1 Initiate Purchase,"**Description:** Buyer clicks Buy Now to initiate purchase flow.
+
+**Acceptance Criteria:**
+- Transaction entity created
+- TransactionRepository created
+- POST /listings/{id}/buy endpoint (USER only)
+- Create transaction record
+- Set status to PENDING
+- Calculate commission (10%)
+- Redirect to payment page
+- Cannot buy own listing
+- Button hidden if not APPROVED
+
+**Database Tables:**
+- transactions (id, listing_id, buyer_id, seller_id, amount, commission, status, created_at)",Full-Stack,Sprint 3
+3.2 VNPay QR Code,"**Description:** Generate VNPay QR code for payment.
+
+**Acceptance Criteria:**
+- payment.html template
+- Display total amount (price + 10% fee)
+- Generate VNPay QR code
+- Display transaction ID
+- Instructions: Quét mã QR để thanh toán qua VNPay",Backend,Sprint 3
+3.3 Verify Payment (Manual),"**Description:** Admin manually verifies VNPay payments.
+
+**Acceptance Criteria:**
+- GET /admin/payments endpoint (ADMIN only)
+- Query: WHERE status = 'PENDING'
+- admin-payments.html template
+- Display: Transaction ID, Buyer, Seller, Amount
+- Verify Payment button
+- Update status to VERIFIED
+- Update listing to SOLD
+- Set sold_at timestamp",Full-Stack,Sprint 3
+3.4 Seller Deliver Credentials,"**Description:** Seller submits account credentials after payment verified.
+
+**Acceptance Criteria:**
+- GET /my-sold-listings endpoint
+- Gửi thông tin tài khoản button
+- credentials-form.html
+- Fields: Username, Password, Notes
+- Encrypt credentials before saving
+- Update transaction to CREDENTIALS_SUBMITTED
+- Success message: Đã gửi thông tin tài khoản
+
+**Database Add:**
+- transactions add columns: credentials_username, credentials_password, credentials_notes",Frontend,Sprint 3
+3.5 Buyer Receive Credentials,"**Description:** Buyer views credentials after admin verification.
+
+**Acceptance Criteria:**
+- GET /my-purchases endpoint
+- Display credentials when VERIFIED + CREDENTIALS_SUBMITTED
+- Show: Username, Password, Notes
+- Warning: Vui lòng đổi mật khẩu ngay sau khi đăng nhập
+- Update status to COMPLETED
+- One-time display (hide after viewing)
+- Show Chờ xác nhận thanh toán if pending",Frontend,Sprint 3
+4.1 Dashboard Overview,"**Description:** Admin dashboard with key platform statistics.
+
+**Acceptance Criteria:**
+- GET /admin/dashboard endpoint (ADMIN only)
+- admin-dashboard.html template
+- Display: Total users
+- Display: Total listings
+- Display: Pending listings count
+- Display: Completed transactions
+- Display: Total revenue
+- Refresh button",Frontend,Sprint 4
+4.2 View All Users,"**Description:** Admin page to view all registered users.
+
+**Acceptance Criteria:**
+- GET /admin/users endpoint (ADMIN only)
+- admin-users.html template
+- Display: Username, Email, Role, Date
+- Order by created_at DESC
+- Pagination (20 per page)",Frontend,Sprint 4
+4.3 Transaction History,"**Description:** Admin page to view all transactions with filtering.
+
+**Acceptance Criteria:**
+- GET /admin/transactions endpoint (ADMIN only)
+- admin-transactions.html template
+- Display: Transaction ID, Buyer, Seller, Amount, Status, Date
+- Status filter dropdown (All, Pending, Verified, Completed)
+- Pagination",Frontend,Sprint 4
+4.4 Recent Activity Log,"**Description:** Show recent platform activity on dashboard.
+
+**Acceptance Criteria:**
+- Query last 10 activities
+- Display on dashboard
+- Show: timestamp, description
+- Activities: registrations, listings, approvals, transactions
+- Order by timestamp DESC
+
+**For MVP:**
+- Can query from existing tables (no separate activity_log table)",Backend,Sprint 4
