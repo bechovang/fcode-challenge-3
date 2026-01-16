@@ -1,12 +1,15 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 inputDocuments:
   - prd.md
   - product-brief-fcode project-2026-01-16.md
+  - epics.md
+  - project-context.md
 workflowType: 'architecture'
-lastStep: 8
+lastStep: 9
 status: 'complete'
 completedAt: '2026-01-16'
+updatedAt: '2026-01-16'
 project_name: 'fcode project'
 user_name: 'Admin'
 date: '2026-01-16'
@@ -1337,6 +1340,9 @@ game-account-shop/
 │   │       ├── application-dev.yml                     # Development profile
 │   │       ├── application-prod.yml                    # Production profile
 │   │       │
+│   │       ├── db/migration/                            # Flyway database migrations
+│   │       │   └── V1__Create_Database_Tables.sql     # Initial schema (4 tables)
+│   │       │
 │   │       ├── templates/                              # Thymeleaf templates
 │   │       │   ├── layout/
 │   │       │   │   ├── header.html                     # Navigation, user menu
@@ -1399,7 +1405,7 @@ game-account-shop/
 │       └── ci.yml                                 # GitHub Actions CI/CD
 │
 └── docs/                                          # Additional documentation
-    ├── database-migration.sql                     # Initial schema
+    ├── database-schema.md                         # Complete database design for MVP
     ├── vnpay-integration.md                        # VNPay API docs
     └── deployment-guide.md                        # Deployment instructions
 ```
@@ -1573,6 +1579,378 @@ game-account-shop/
 - **Environment Variables:** `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `EMAIL_HOST`, `VNPAY_TMN_CODE`
 - **Database:** External MySQL 8.0 instance
 - **Reverse Proxy:** Nginx/Apache (optional, for SSL)
+
+---
+
+## Database Schema Design (MVP)
+
+**Date Added:** 2026-01-16
+**Purpose:** Complete database schema for the 14-story MVP with newbie-friendly design
+
+### Overview
+
+The database schema was designed specifically for the **simplified newbie MVP** scope, focusing on clarity and ease of implementation over complexity. All design decisions prioritize developer productivity while supporting all 14 stories across 4 epics.
+
+**Database:** `gameaccountshop` (MySQL 8.0)
+**Character Set:** `utf8mb4` | **Collation:** `utf8mb4_unicode_ci`
+
+### Design Principles for Newbie Developers
+
+1. **Simple Tables:** Only 4 tables, each with a clear purpose
+2. **No Complex Relationships:** Use ID references, not ORM joins
+3. **Clear Naming:** `snake_case` for everything in database
+4. **Minimal Fields:** Only what's needed for the stories
+5. **Explicit Status:** Use ENUM for easy-to-understand states
+
+### Entity Relationship Diagram
+
+```
+┌──────────────┐
+│    users     │
+│──────────────│
+│ id (PK)      │────┐
+│ username     │    │
+│ password     │    │
+│ email        │    │
+│ role         │    │
+│ created_at   │    │
+└──────────────┘    │
+                    │
+                    │      ┌──────────────────┐
+                    │      │  game_accounts   │
+                    ├─────▶│──────────────────│
+                    │      │ id (PK)          │
+                    │      │ seller_id (FK)   │
+                    │      │ game_name        │
+                    │      │ rank             │
+                    │      │ price            │
+                    │      │ description      │
+                    │      │ status           │
+                    │      │ rejection_reason │
+                    │      │ created_at       │
+                    │      │ sold_at          │
+                    │      └──────────────────┘
+                    │                │
+                    │                │
+                    │      ┌─────────────────┐
+                    │      │  transactions   │
+                    │      │─────────────────│
+                    │      │ id (PK)         │
+                    │      │ listing_id (FK) │
+                    │      │ buyer_id (FK)   │
+                    │      │ seller_id (FK)  │
+                    │      │ amount          │
+                    │      │ commission      │
+                    │      │ status          │
+                    │      │ account_username│
+                    │      │ account_password│
+                    │      │ account_notes   │
+                    │      │ created_at      │
+                    │      │ verified_at     │
+                    │      └─────────────────┘
+                    │                │
+                    │                │
+                    │      ┌─────────────────┐
+                    │      │    reviews      │
+                    │      │─────────────────│
+                    │      │ id (PK)         │
+                    │      │ transaction_id  │
+                    │      │ buyer_id (FK)   │
+                    │      │ seller_id (FK)  │
+                    │      │ rating (1-5)     │
+                    │      │ comment         │
+                    │      │ created_at      │
+                    │      └─────────────────┘
+                    │
+                    └────────── All FKs reference users.id
+```
+
+### Table Definitions
+
+#### 1. users
+
+**Purpose:** Store user accounts for login, registration, and role-based access.
+
+**Stories:** Epic 1 (Basic Authentication)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT | Primary key, auto-increment |
+| `username` | VARCHAR(50) | Unique username (e.g., "gamer123") |
+| `password` | VARCHAR(255) | BCrypt hashed password |
+| `email` | VARCHAR(100) | Email address |
+| `role` | ENUM | **USER** or **ADMIN** |
+| `created_at` | TIMESTAMP | Account creation date |
+
+**SQL:**
+```sql
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100),
+    role ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Default Admin Account:**
+- Username: `admin`
+- Password: `admin123` (hashed with BCrypt)
+- Role: `ADMIN`
+
+---
+
+#### 2. game_accounts
+
+**Purpose:** Store game account listings that sellers want to sell.
+
+**Stories:** Epic 2 (Listings & Ratings)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT | Primary key, auto-increment |
+| `seller_id` | BIGINT | Foreign key to users.id (who created listing) |
+| `game_name` | VARCHAR(100) | Game name (e.g., "Liên Minh Huyền Thoại") |
+| `rank` | VARCHAR(50) | Rank/Level (e.g., "Gold", "Diamond") |
+| `price` | DECIMAL(12,2) | Price in VNĐ (e.g., 500000.00) |
+| `description` | TEXT | Account description/details |
+| `status` | ENUM | **PENDING** → **APPROVED** → **SOLD** (or **REJECTED**) |
+| `rejection_reason` | VARCHAR(500) | Reason for rejection (if applicable) |
+| `created_at` | TIMESTAMP | When listing was created |
+| `sold_at` | TIMESTAMP | When listing was sold (NULL until sold) |
+
+**SQL:**
+```sql
+CREATE TABLE game_accounts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    seller_id BIGINT NOT NULL,
+    game_name VARCHAR(100) NOT NULL,
+    rank VARCHAR(50) NOT NULL,
+    price DECIMAL(12,2) NOT NULL CHECK (price > 0),
+    description TEXT,
+    status ENUM('PENDING', 'APPROVED', 'REJECTED', 'SOLD') NOT NULL DEFAULT 'PENDING',
+    rejection_reason VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    sold_at TIMESTAMP NULL,
+    INDEX idx_seller_id (seller_id),
+    INDEX idx_status (status),
+    INDEX idx_game_name (game_name),
+    INDEX idx_rank (rank),
+    INDEX idx_created_at (created_at DESC),
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Status Flow:**
+```
+PENDING (new listing)
+    ↓ (admin approves)
+APPROVED (visible in marketplace)
+    ↓ (purchased)
+SOLD (no longer available)
+
+OR
+
+PENDING
+    ↓ (admin rejects)
+REJECTED (with reason)
+```
+
+---
+
+#### 3. transactions
+
+**Purpose:** Track purchase transactions and payment verification.
+
+**Stories:** Epic 3 (Simple Buying)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT | Primary key, auto-increment |
+| `listing_id` | BIGINT | Foreign key to game_accounts.id |
+| `buyer_id` | BIGINT | Foreign key to users.id (who is buying) |
+| `seller_id` | BIGINT | Foreign key to users.id (who is selling) |
+| `amount` | DECIMAL(12,2) | Listing price |
+| `commission` | DECIMAL(12,2) | Platform fee (10% of amount) |
+| `status` | ENUM | **PENDING** → **VERIFIED** |
+| `account_username` | VARCHAR(100) | Game account credential (filled by admin) |
+| `account_password` | VARCHAR(255) | Game account credential (filled by admin) |
+| `account_notes` | TEXT | Additional notes for buyer |
+| `created_at` | TIMESTAMP | When transaction was created |
+| `verified_at` | TIMESTAMP | When admin verified payment |
+
+**SQL:**
+```sql
+CREATE TABLE transactions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    listing_id BIGINT NOT NULL,
+    buyer_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+    commission DECIMAL(12,2) NOT NULL,
+    status ENUM('PENDING', 'VERIFIED') NOT NULL DEFAULT 'PENDING',
+    account_username VARCHAR(100),
+    account_password VARCHAR(255),
+    account_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verified_at TIMESTAMP NULL,
+    INDEX idx_buyer_id (buyer_id),
+    INDEX idx_seller_id (seller_id),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at DESC),
+    FOREIGN KEY (listing_id) REFERENCES game_accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Status Flow:**
+```
+PENDING (buyer clicked "Buy Now")
+    ↓ (admin verified VNPay payment)
+VERIFIED (credentials sent to buyer's email)
+```
+
+---
+
+#### 4. reviews
+
+**Purpose:** Store buyer ratings and reviews for sellers.
+
+**Stories:** Epic 2 (Listing Details with Simple Rating - Story 2.3)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT | Primary key, auto-increment |
+| `transaction_id` | BIGINT | Foreign key to transactions.id (UNIQUE) |
+| `buyer_id` | BIGINT | Foreign key to users.id (who wrote review) |
+| `seller_id` | BIGINT | Foreign key to users.id (seller being reviewed) |
+| `rating` | INT | Rating from 1 to 5 stars |
+| `comment` | TEXT | Optional review comment |
+| `created_at` | TIMESTAMP | When review was created |
+
+**SQL:**
+```sql
+CREATE TABLE reviews (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_id BIGINT NOT NULL UNIQUE,
+    buyer_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL,
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_seller_id (seller_id),
+    INDEX idx_transaction_id (transaction_id),
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### Epic to Table Mapping
+
+| Epic | Stories | Tables Used |
+|------|---------|-------------|
+| **Epic 1: Basic Authentication** | 1.1, 1.2, 1.3 | `users` |
+| **Epic 2: Listings & Ratings** | 2.1, 2.2, 2.3, 2.4, 2.5 | `game_accounts`, `reviews` |
+| **Epic 3: Simple Buying** | 3.1, 3.2, 3.3 | `transactions`, `game_accounts` |
+| **Epic 4: Dashboard & Profiles** | 4.1, 4.2, 4.3 | All tables (for queries) |
+
+### Migration Strategy
+
+**Tool:** Flyway
+**Migration File:** `src/main/resources/db/migration/V1__Create_Database_Tables.sql`
+
+**Flyway Configuration (application.yml):**
+```yaml
+spring:
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+```
+
+**For Development:**
+```yaml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Use Flyway for schema management
+```
+
+**Documentation:**
+- Database Schema Details: `docs/database-schema.md`
+- Migration Script: `src/main/resources/db/migration/V1__Create_Database_Tables.sql`
+
+### Common Queries Reference
+
+**Get All Approved Listings:**
+```sql
+SELECT ga.*, u.username as seller_name
+FROM game_accounts ga
+JOIN users u ON ga.seller_id = u.id
+WHERE ga.status = 'APPROVED'
+ORDER BY ga.created_at DESC;
+```
+
+**Search Listings by Game Name:**
+```sql
+SELECT ga.*, u.username as seller_name
+FROM game_accounts ga
+JOIN users u ON ga.seller_id = u.id
+WHERE ga.status = 'APPROVED'
+  AND ga.game_name LIKE CONCAT('%', ?, '%')
+ORDER BY ga.created_at DESC;
+```
+
+**Get Seller's Average Rating:**
+```sql
+SELECT
+    COUNT(*) as total_reviews,
+    COALESCE(AVG(rating), 0) as average_rating
+FROM reviews
+WHERE seller_id = ?;
+```
+
+**Admin Dashboard Statistics:**
+```sql
+-- Total Users
+SELECT COUNT(*) FROM users;
+
+-- Total Listings
+SELECT COUNT(*) FROM game_accounts;
+
+-- Pending Listings
+SELECT COUNT(*) FROM game_accounts WHERE status = 'PENDING';
+
+-- Sold Listings
+SELECT COUNT(*) FROM game_accounts WHERE status = 'SOLD';
+
+-- Total Transactions
+SELECT COUNT(*) FROM transactions;
+
+-- Total Revenue
+SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE status = 'VERIFIED';
+```
+
+### Key Design Decisions
+
+**Simplified for MVP:**
+- **Role Simplification:** Only USER and ADMIN roles (not BUYER/SELLER/ADMIN)
+- **No Verification Status:** Removed `is_verified` field (not in MVP scope)
+- **ID-Based Navigation:** All foreign keys use ID references, not ORM relationships
+- **Explicit Status Enums:** Clear state transitions for each entity
+- **Minimal Fields:** Only columns needed for the 14 stories
+
+**Alignment with Epics:**
+- Epic 1.2 specifies role "USER" (confirmed in acceptance criteria)
+- Epic 1.3 specifies role "ADMIN" (confirmed in acceptance criteria)
+- Epic 2.4 specifies rejection reason storage
+- Epic 3.3 specifies credential delivery in transactions
+- All 14 stories are fully supported by this schema
 
 ---
 
