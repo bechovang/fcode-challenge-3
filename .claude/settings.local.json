@@ -70,7 +70,8 @@
       "Skill(bmad:bmm:workflows:create-epics-and-stories)",
       "Bash(ls:*)",
       "Bash(spring init:*)",
-      "Bash(mvn wrapper:wrapper:*)"
+      "Bash(mvn wrapper:wrapper:*)",
+      "Bash(test:*)"
     ]
   }
 }
