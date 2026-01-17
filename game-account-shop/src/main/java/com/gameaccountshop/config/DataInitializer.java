@@ -9,8 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Order(1) // Chạy đầu tiên, trước bất kỳ CommandLineRunner nào khác
@@ -27,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         // Kiểm tra xem admin đã tồn tại chưa
         if (userRepository.findByUsername("admin").isEmpty()) {
