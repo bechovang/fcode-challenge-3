@@ -424,9 +424,11 @@ game-account-shop/
 | Table | Description |
 |-------|-------------|
 | `users` | User accounts (buyers, sellers, admins) |
-| `game_accounts` | Game account listings |
+| `game_accounts` | Game account listings (column `account_rank` for rank level) |
 | `transactions` | Purchase transactions |
 | `reviews` | Seller ratings and reviews |
+
+**Note:** The `game_accounts` table uses `account_rank` instead of `rank` to avoid MySQL reserved keyword conflicts.
 
 ### Status Flows
 
@@ -576,10 +578,14 @@ mvnw.cmd spring-boot:run
 
 | Epic | Status | Stories Done |
 |------|--------|--------------|
-| Epic 1: Basic Authentication | In Progress | 1/3 (✅Initialize) |
+| Epic 1: Basic Authentication | In Progress | 2/3 (✅Initialize, ✅DB Setup) |
 | Epic 2: Listings & Ratings | Backlog | 0/5 |
 | Epic 3: Simple Buying | Backlog | 0/3 |
 | Epic 4: Dashboard & Profiles | Backlog | 0/3 |
+
+**✅ Backend Status:** Running successfully on http://localhost:8080
+- Database connected and migrated (Flyway V1 applied)
+- Default admin account created (admin/admin123)
 
 ---
 

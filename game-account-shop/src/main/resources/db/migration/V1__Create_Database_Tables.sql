@@ -4,14 +4,8 @@
 -- ===================================================================
 -- This migration creates all tables needed for the 14-story MVP
 -- Designed for newbie developers - simple and straightforward
+-- IMPORTANT: Database must be created BEFORE running this script
 -- ===================================================================
-
--- Create database if not exists
-CREATE DATABASE IF NOT EXISTS gameaccountshop
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE gameaccountshop;
 
 -- ===================================================================
 -- TABLE: users
@@ -39,7 +33,7 @@ CREATE TABLE game_accounts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     seller_id BIGINT NOT NULL COMMENT 'Foreign key to users.id',
     game_name VARCHAR(100) NOT NULL COMMENT 'e.g., Liên Minh Huyền Thoại',
-    rank VARCHAR(50) NOT NULL COMMENT 'e.g., Gold, Diamond',
+    account_rank VARCHAR(50) NOT NULL COMMENT 'e.g., Gold, Diamond',
     price DECIMAL(12,2) NOT NULL CHECK (price > 0) COMMENT 'Price in VNĐ',
     description TEXT COMMENT 'Account details and description',
     status ENUM('PENDING', 'APPROVED', 'REJECTED', 'SOLD') NOT NULL DEFAULT 'PENDING',
@@ -49,7 +43,7 @@ CREATE TABLE game_accounts (
     INDEX idx_seller_id (seller_id),
     INDEX idx_status (status),
     INDEX idx_game_name (game_name) COMMENT 'For search by game name',
-    INDEX idx_rank (rank) COMMENT 'For filter by rank',
+    INDEX idx_account_rank (account_rank) COMMENT 'For filter by rank',
     INDEX idx_created_at (created_at DESC) COMMENT 'For sorting newest first',
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

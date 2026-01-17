@@ -44,7 +44,7 @@ This database is designed for **beginner developers** building a Game Account Ma
                     │      │ id (PK)          │
                     │      │ seller_id (FK)   │
                     │      │ game_name        │
-                    │      │ rank             │
+                    │      │ account_rank     │
                     │      │ price            │
                     │      │ description      │
                     │      │ status           │
@@ -137,7 +137,7 @@ CREATE TABLE users (
 | `id` | BIGINT | Primary key, auto-increment |
 | `seller_id` | BIGINT | Foreign key to users.id (who created listing) |
 | `game_name` | VARCHAR(100) | Game name (e.g., "Liên Minh Huyền Thoại") |
-| `rank` | VARCHAR(50) | Rank/Level (e.g., "Gold", "Diamond") |
+| `account_rank` | VARCHAR(50) | Rank/Level (e.g., "Gold", "Diamond") |
 | `price` | DECIMAL(12,2) | Price in VNĐ (e.g., 500000.00) |
 | `description` | TEXT | Account description/details |
 | `status` | ENUM | **PENDING** → **APPROVED** → **SOLD** (or **REJECTED**) |
@@ -151,7 +151,7 @@ CREATE TABLE game_accounts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     seller_id BIGINT NOT NULL,
     game_name VARCHAR(100) NOT NULL,
-    rank VARCHAR(50) NOT NULL,
+    account_rank VARCHAR(50) NOT NULL COMMENT 'e.g., Gold, Diamond',
     price DECIMAL(12,2) NOT NULL CHECK (price > 0),
     description TEXT,
     status ENUM('PENDING', 'APPROVED', 'REJECTED', 'SOLD') NOT NULL DEFAULT 'PENDING',
@@ -161,7 +161,7 @@ CREATE TABLE game_accounts (
     INDEX idx_seller_id (seller_id),
     INDEX idx_status (status),
     INDEX idx_game_name (game_name),
-    INDEX idx_rank (rank),
+    INDEX idx_account_rank (account_rank),
     INDEX idx_created_at (created_at DESC),
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -313,7 +313,7 @@ SELECT ga.*, u.username as seller_name
 FROM game_accounts ga
 JOIN users u ON ga.seller_id = u.id
 WHERE ga.status = 'APPROVED'
-  AND ga.rank = 'Gold'
+  AND ga.account_rank = 'Gold'
 ORDER BY ga.created_at DESC;
 ```
 
@@ -349,7 +349,7 @@ SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE status = 'VERIFIED';
 
 ### My Purchases
 ```sql
-SELECT t.*, ga.game_name, ga.rank, u.username as seller_name
+SELECT t.*, ga.game_name, ga.account_rank, u.username as seller_name
 FROM transactions t
 JOIN game_accounts ga ON t.listing_id = ga.id
 JOIN users u ON t.seller_id = u.id
