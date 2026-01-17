@@ -46,7 +46,7 @@ development_status:
   epic-1: in-progress
   1-1-initialize-spring-boot-project: done
   1-2-user-registration-login: backlog
-  1-3-default-admin-account: backlog
+  1-3-default-admin-account: done
   epic-1-retrospective: optional
 
   # Epic 2: Listings & Ratings (5 stories)
