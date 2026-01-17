@@ -1,0 +1,24 @@
+# BMAD Framework Outputs
+_bmad-output/
+
+# Claude AI
+.claude/
+*.claude
+.claude*
+settings.local.json
+*.local.json
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
