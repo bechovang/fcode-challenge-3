@@ -5,6 +5,8 @@ _bmad-output/
 .claude/
 *.claude
 .claude*
+settings.local.json
+*.local.json
 
 # IDE
 .idea/
