@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/header}">
+<body>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Đăng bán tài khoản game</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Success Message -->
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <span th:text="${successMessage}">Success message</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Create Listing Form -->
+                    <form th:action="@{/listings/create}" th:object="${listing}" method="post" novalidate>
+                        <!-- CSRF Token -->
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                        <!-- Game Name -->
+                        <div class="mb-3">
+                            <label for="gameName" class="form-label">Tên game *</label>
+                            <input type="text" class="form-control"
+                                   id="gameName"
+                                   name="gameName"
+                                   th:field="*{gameName}"
+                                   placeholder="Ví dụ: Liên Minh Huyền Thoại, Valorant"
+                                   required>
+                            <div th:if="${#fields.hasErrors('gameName')}"
+                                 class="text-danger"
+                                 th:errors="*{gameName}">Game name error</div>
+                        </div>
+
+                        <!-- Rank/Level -->
+                        <div class="mb-3">
+                            <label for="rank" class="form-label">Rank/Cấp độ *</label>
+                            <input type="text" class="form-control"
+                                   id="rank"
+                                   name="rank"
+                                   th:field="*{rank}"
+                                   placeholder="Ví dụ: Gold, Diamond, Thách challenging"
+                                   required>
+                            <div th:if="${#fields.hasErrors('rank')}"
+                                 class="text-danger"
+                                 th:errors="*{rank}">Rank error</div>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Giá bán (VNĐ) *</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control"
+                                       id="price"
+                                       name="price"
+                                       th:field="*{price}"
+                                       placeholder="500000"
+                                       min="0.01"
+                                       step="0.01"
+                                       required>
+                                <span class="input-group-text">VNĐ</span>
+                            </div>
+                            <div class="form-text">Giá bán phải lớn hơn 0</div>
+                            <div th:if="${#fields.hasErrors('price')}"
+                                 class="text-danger"
+                                 th:errors="*{price}">Price error</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả chi tiết *</label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      th:field="*{description}"
+                                      rows="4"
+                                      placeholder="Mô tả chi tiết về tài khoản, tướng, trang phục, skin, v.v..."
+                                      required></textarea>
+                            <div th:if="${#fields.hasErrors('description')}"
+                                 class="text-danger"
+                                 th:errors="*{description}">Description error</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Đăng bán
+                            </button>
+                        </div>
+
+                        <!-- Validation Error Summary -->
+                        <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger mt-3" role="alert">
+                            <strong>Vui lòng điền đầy đủ thông tin!</strong>
+                            <ul>
+                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Error</li>
+                            </ul>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Back to Home Button -->
+            <div class="text-center mt-3">
+                <a href="/" class="btn btn-secondary">Quay lại trang chủ</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:replace="~{layout/footer}"></th:replace>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/header}">
+<body>
+<div class="container mt-4">
+    <div class="jumbotron bg-light p-5 rounded">
+        <h1 class="display-4">🎮 Game Account Shop</h1>
+        <p class="lead">Mua bán tài khoản game an toàn và uy tín</p>
+        <hr class="my-4">
+        <p>Chào mừng đến Game Account Shop - Nền tảng mua bán tài khoản game hàng đầu Việt Nam!</p>
+        <a th:if="${#request.user != null}" class="btn btn-primary btn-lg" href="/listings/create">Đăng bán tài khoản</a>
+        <a th:if="${#request.user == null}" class="btn btn-outline-primary btn-lg" href="/login">Đăng nhập để bắt đầu</a>
+    </div>
+
+    <!-- Success Message from RedirectAttributes -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}">Success message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}">Error message</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<th:replace="~{layout/footer}"></th:replace>
+</body>
+</html>

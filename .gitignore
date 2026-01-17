@@ -1,5 +1,6 @@
 # BMAD Framework Outputs
 _bmad-output/
+*.yaml
 
 # Claude AI
 .claude/

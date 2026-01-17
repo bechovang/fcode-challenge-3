@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -21,9 +22,28 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authz -> authz
-                .anyRequest().permitAll() // TODO: Configure proper security in Epic 1 stories
+                // Public endpoints
+                .requestMatchers("/", "/login", "/register").permitAll()
+                // Static resources
+                .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                // Listing endpoints require authentication
+                .requestMatchers("/listings/**").authenticated()
+                // All other requests require authentication
+                .anyRequest().authenticated()
             )
-            .csrf(csrf -> csrf.disable()); // Disable CSRF for MVP development
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/", true)
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/?logout")
+                .invalidateHttpSession(true)
+                .permitAll()
+            )
+            .csrf(csrf -> csrf // CSRF protection enabled for security
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            );
         return http.build();
     }
 }
