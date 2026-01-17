@@ -1,9 +1,10 @@
 # BMAD Framework Outputs
 _bmad-output/
 
-# Claude AI Settings
-.claude/settings.local.json
-.claude/settings*.json
+# Claude AI
+.claude/
+*.claude
+.claude*
 
 # IDE
 .idea/
