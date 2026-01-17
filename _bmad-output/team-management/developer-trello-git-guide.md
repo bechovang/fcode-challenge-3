@@ -2,7 +2,10 @@
 
 **Project:** Game Account Shop MVP
 **Your Role:** Developer (Backend, Frontend, or Full-Stack)
-**Tools:** Trello (Task tracking), Git (Version control)
+**Tools:** Trello (Task tracking), Git (Version control), BMAD (AI workflows)
+
+**Last Updated:** January 2026
+**MVP Scope:** 14 stories across 4 epics
 
 ---
 
@@ -21,10 +24,10 @@
 **What You'll See:**
 
 ```
-┌─────────────┬──────────┬──────────┬──────────┬───────────┬───────┬─────┐
-│  Backlog    │ Sprint 1 │ Sprint 2 │ In Progress│ Review  │ Done  │
-│  (21 cards) │ (5 cards)│ (7 cards)│ (work!)   │(check it)│(done!)│
-└─────────────┴──────────┴──────────┴──────────┴───────────┴───────┴─────┘
+┌─────────────┬──────────┬──────────┬──────────┬───────────┬───────┐
+│  Backlog    │ Sprint 1 │ Sprint 2,... │ In Progress│ Review  │ Done  │
+│  (14 cards) │ (3 cards)│ (5 cards)│ (work!)   │(check it)│(done!)│
+└─────────────┴──────────┴──────────┴──────────┴───────────┴───────┘
 ```
 
 ---
@@ -39,12 +42,12 @@
    - Type "assigned to me"
    - Or look for cards with your avatar
 
-**You'll typically be assigned 4-7 cards per sprint.**
+**You'll typically be assigned 3-5 cards per sprint.**
 
 **Example:**
-- Dev 1 (Backend): Cards with 🔵 blue label
-- Dev 2 (Frontend): Cards with 🟢 green label
-- Dev 3 (Full-Stack): Cards with 🟣 purple label
+- Dev A (Frontend): Cards with 🟢 green label
+- Dev B (Backend): Cards with 🔵 blue label
+- Dev C (Full-Stack): Cards with 🟣 purple label
 
 ---
 
@@ -69,6 +72,10 @@
 │ ✅ Hash password with BCrypt        │
 │ ✅ Assign USER role                 │
 │                                     │
+│ BMAD STORY FILE:                    │
+│ _bmad-output/implementation-artifacts/│
+│   1-2-user-registration-login.md    │
+│                                     │
 │ CHECKLIST:                           │
 │ ☐ Create User entity                │
 │ ☐ Create UserRepository             │
@@ -87,12 +94,52 @@
 2. **Labels** - Type of work (Frontend/Backend/Full-Stack)
 3. **Description** - Full story details
 4. **Checklist** - Steps to complete
-5. **Due date** - When it's due
-6. **Comments** - Team communication
+5. **BMAD Story File** - Reference to detailed story documentation
+6. **Due date** - When it's due
+7. **Comments** - Team communication
 
 ---
 
-### 1.4 Updating Trello Cards
+### 1.4 Using BMAD Workflows
+
+**Before starting work, check if story file exists:**
+
+```bash
+# Story files are located at:
+_bmad-output/implementation-artifacts/{story-key}.md
+
+# Example:
+_bmad-output/implementation-artifacts/1-2-user-registration-login.md
+```
+
+**If story file doesn't exist:**
+
+1. Ask Team Lead to run: `/bmad:bmm:workflows:create-story`
+2. Wait for story file to be created
+3. Then start your work
+
+**When implementing a story:**
+
+Option 1: **Run dev-story workflow** (AI-assisted)
+```
+/bmad:bmm:workflows:dev-story
+```
+This will:
+- Load the story file
+- Guide you through implementation
+- Run tests
+- Update completion status
+
+Option 2: **Manual implementation**
+1. Read the story file
+2. Implement acceptance criteria
+3. Update checklist in Trello
+4. Run tests locally
+5. Commit your code
+
+---
+
+### 1.5 Updating Trello Cards
 
 **When You Start Working:**
 
@@ -128,7 +175,7 @@ ETA: Tomorrow afternoon
 
 ---
 
-### 1.5 Daily Trello Routine
+### 1.6 Daily Trello Routine
 
 **Every Morning (Before Standup):**
 
@@ -146,8 +193,8 @@ Hi! Yesterday I completed:
   All tests passing
 
 Today I'm working on:
-- Story 1.3: User Login
-  Will create SecurityConfig and login endpoint
+- Story 1.3: Default Admin Account
+  Will create DataInitializer component
 
 Blockers:
 - None! / Waiting for [something]
@@ -160,14 +207,14 @@ Blockers:
 
 ---
 
-### 1.6 Moving Cards Through Workflow
+### 1.7 Moving Cards Through Workflow
 
 **Card Lifecycle:**
 
 ```
 Sprint 1 → In Progress → Review → Done
     ↓           ↓            ↓         ↓
- Assigned   Working    Testing   Approved
+  Assigned   Working    Testing   Approved
 ```
 
 **What You Do:**
@@ -177,30 +224,9 @@ Sprint 1 → In Progress → Review → Done
 4. **Done** → Approved and merged!
 
 **Important:**
-- You can move cards in "Sprint X" to prioritize
+- You can move cards within "Sprint X" to prioritize
 - Don't move cards between lists without telling Team Lead
 - Always add comments when you make progress
-
----
-
-### 1.7 Using Trello on Mobile
-
-**Trello Mobile App:**
-
-1. Download from App Store/Google Play
-2. Log in with your account
-3. Open "Game Account Shop - MVP" board
-
-**What You Can Do:**
-- View your assigned cards
-- Add comments
-- Check off checklist items
-- @mention team members
-
-**Use It For:**
-- Quick status updates
-- Letting team know you're blocked
-- Checking what's assigned to you
 
 ---
 
@@ -491,7 +517,24 @@ git push origin feature/story-1.2-user-registration
 
 ---
 
-### 2.8 Create Pull Request
+### 2.8 Code Review with BMAD
+
+**Option 1: AI Code Review (Recommended)**
+
+Before creating PR, run AI code review:
+
+```bash
+# Run code review workflow
+/bmad:bmm:workflows:code-review
+```
+
+This will:
+- Review your code against acceptance criteria
+- Find potential issues
+- Suggest fixes
+- Update story status
+
+**Option 2: Manual Pull Request**
 
 **Step 1: Go to GitHub**
 
@@ -535,9 +578,6 @@ Implement user registration with BCrypt password hashing.
 3. Register with valid data → should work
 4. Try duplicate username → should show error
 5. Try short password → should show error
-
-## Screenshots (if applicable)
-[Paste screenshots if you have any]
 
 ## Checklist
 - [x] Code follows project conventions
@@ -808,23 +848,87 @@ Blockers: None!
 **Final Steps:**
 
 ```bash
-# 1. Final commit
+# 1. Run code review (optional)
+/bmad:bmm:workflows:code-review
+
+# 2. Final commit
 git add .
 git commit -m "Story 1.2: Complete - All acceptance criteria met"
 
-# 2. Push to GitHub
+# 3. Push to GitHub
 git push origin feature/story-1.2-user-registration
 
-# 3. Create Pull Request on GitHub
-# 4. Update Trello card: "✅ Ready for review!"
+# 4. Create Pull Request on GitHub
+# 5. Update Trello card: "✅ Ready for review!"
 
-# 5. Notify Team Lead
+# 6. Notify Team Lead
 # (In standup or via chat)
 ```
 
 ---
 
-## Part 4: Troubleshooting
+## Part 4: Project Structure Reference
+
+### Current MVP Scope (14 Stories)
+
+| Epic | Stories | Status |
+|------|---------|--------|
+| Epic 1: Basic Authentication | 3 stories | In Progress (1/3 done) |
+| Epic 2: Listings & Ratings | 5 stories | Backlog |
+| Epic 3: Simple Buying | 3 stories | Backlog |
+| Epic 4: Dashboard & Profiles | 3 stories | Backlog |
+
+### Story Files Location
+
+```
+_bmad-output/implementation-artifacts/
+├── 1-1-initialize-spring-boot-project.md ✅ DONE
+├── 1-2-user-registration-login.md
+├── 1-3-default-admin-account.md
+├── 2-1-create-listing.md
+├── 2-2-browse-listings-search-filter.md
+├── 2-3-listing-details-rating.md
+├── 2-4-admin-approve-reject-listings.md
+├── 2-5-mark-listing-sold.md
+├── 3-1-buyer-click-buy.md
+├── 3-2-show-vnpay-qr-code.md
+├── 3-3-admin-verify-send-gmail.md
+├── 4-1-simple-admin-dashboard.md
+├── 4-2-seller-profile-page.md
+├── 4-3-my-purchases-page.md
+└── sprint-status.yaml
+```
+
+### Code Structure
+
+```
+game-account-shop/
+├── src/main/java/com/gameaccountshop/
+│   ├── GameAccountShopApplication.java
+│   ├── config/
+│   │   ├── SecurityConfig.java
+│   │   └── DataInitializer.java
+│   ├── controller/
+│   ├── service/
+│   ├── repository/
+│   │   └── UserRepository.java
+│   ├── entity/
+│   │   └── User.java
+│   ├── enums/
+│   │   └── Role.java
+│   └── dto/
+├── src/main/resources/
+│   ├── application.yml
+│   ├── db/migration/
+│   │   └── V1__Create_Database_Tables.sql
+│   ├── templates/
+│   └── static/
+└── pom.xml
+```
+
+---
+
+## Part 5: Troubleshooting
 
 ### Git Issues
 
@@ -888,7 +992,37 @@ git status
 
 ---
 
-## Part 5: Quick Reference
+### Build Issues
+
+**Issue: "Compilation failed"**
+
+```bash
+# Check Java version
+java -version
+# Should be 17+
+
+# Clean and rebuild
+./mvnw clean compile
+
+# If still failing, check for syntax errors
+```
+
+**Issue: "Database connection failed"**
+
+```bash
+# Check MySQL is running
+mysql --version
+
+# Verify database exists
+mysql -u root -p
+> SHOW DATABASES;
+
+# Check application.yml credentials
+```
+
+---
+
+## Part 6: Quick Reference
 
 ### Git Command Summary
 
@@ -903,6 +1037,15 @@ git status
 | `git checkout main` | Switch to main |
 | `git log` | See commit history |
 
+### BMAD Workflows
+
+| Command | What It Does |
+|---------|--------------|
+| `/bmad:bmm:workflows:create-story` | Create story file from epic |
+| `/bmad:bmm:workflows:dev-story` | AI-assisted story implementation |
+| `/bmad:bmm:workflows:code-review` | AI code review |
+| `/bmad:bmm:workflows:sprint-status` | Check sprint progress |
+
 ### Trello Card Labels
 
 | Color | Meaning |
@@ -916,7 +1059,7 @@ git status
 
 ---
 
-## Part 6: Best Practices
+## Part 7: Best Practices
 
 ### Do's ✅
 
@@ -925,6 +1068,8 @@ git status
 - **Update Trello card comments**
 - **Test before committing**
 - **Pull before pushing**
+- **Use BMAD workflows** for story implementation
+- **Follow project-context.md** coding standards
 - **Ask for help when stuck**
 
 ### Don'ts ❌
@@ -935,10 +1080,11 @@ git status
 - **Don't forget to pull latest changes**
 - **Don't commit sensitive data (passwords, keys)**
 - **Don't ignore merge conflicts**
+- **Don't skip code review**
 
 ---
 
-## Part 7: Getting Help
+## Part 8: Getting Help
 
 ### When to Ask for Help
 
@@ -948,6 +1094,7 @@ git status
 - Not sure about acceptance criteria
 - Merge conflict you can't resolve
 - Test is failing and you don't know why
+- BMAD workflow not working as expected
 
 ### How to Ask
 
@@ -978,7 +1125,7 @@ It doesn't work. Help!
 
 ---
 
-## Part 8: End of Day Checklist
+## Part 9: End of Day Checklist
 
 **Before you leave each day:**
 
@@ -997,6 +1144,38 @@ git status
 
 ---
 
+## Part 10: Story Completion Checklist
+
+**Before marking a story as complete:**
+
+- [ ] All acceptance criteria implemented
+- [ ] Code tested locally
+- [ ] No console errors or warnings
+- [ ] Follows project-context.md standards
+- [ ] Code committed to feature branch
+- [ ] Pushed to GitHub
+- [ ] Trello checklist completed
+- [ ] Ready for code review
+
+**After code review approved:**
+
+- [ ] Pull request merged to main
+- [ ] Local main branch updated
+- [ ] Feature branch deleted (optional)
+- [ ] Story marked as "done" in sprint-status.yaml
+- [ ] Trello card moved to "Done"
+
+---
+
 **You're ready! Follow this guide and you'll be a Trello & Git pro in no time! 🚀**
 
 **Remember: When in doubt, ask your Team Lead!**
+
+---
+
+**Documentation Links:**
+- Database Schema: `docs/database-schema.md`
+- Project Context: `_bmad-output/planning-artifacts/project-context.md`
+- Architecture: `_bmad-output/planning-artifacts/architecture.md`
+- Epics: `_bmad-output/planning-artifacts/epics.md`
+- Sprint Status: `_bmad-output/implementation-artifacts/sprint-status.yaml`
