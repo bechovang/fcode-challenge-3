@@ -578,7 +578,7 @@ mvnw.cmd spring-boot:run
 
 | Epic | Status | Stories Done |
 |------|--------|--------------|
-| Epic 1: Basic Authentication | In Progress | 2/3 (✅Initialize, ✅DB Setup) |
+| Epic 1: Basic Authentication | Completed | 3/3 (✅Initialize, ✅DB Setup, ✅Auth Logic) |
 | Epic 2: Listings & Ratings | Backlog | 0/5 |
 | Epic 3: Simple Buying | Backlog | 0/3 |
 | Epic 4: Dashboard & Profiles | Backlog | 0/3 |
@@ -586,6 +586,7 @@ mvnw.cmd spring-boot:run
 **✅ Backend Status:** Running successfully on http://localhost:8080
 - Database connected and migrated (Flyway V1 applied)
 - Default admin account created (admin/admin123)
+- **User Registration & Login implemented** (Spring Security + Thymeleaf)
 
 ---
 
