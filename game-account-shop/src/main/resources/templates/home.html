@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Game Account Shop</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+
+    nav {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+    }
+
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      color: #333;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .logout-form {
+      display: inline;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .success {
+      color: green;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <a href="/">Home</a>
+    <span sec:authorize="isAnonymous()">
+      <a href="/auth/login">Login</a>
+      <a href="/auth/register">Register</a>
+    </span>
+    <span sec:authorize="isAuthenticated()">
+      <span>Welcome, <span sec:authentication="name">User</span>!</span>
+      <form th:action="@{/auth/logout}" method="post" class="logout-form">
+        <button type="submit">Logout</button>
+      </form>
+    </span>
+  </nav>
+
+  <div th:if="${param.logout}" class="success">
+    Đăng xuất thành công!
+  </div>
+
+  <h1>Welcome to Game Account Shop</h1>
+  <p>Find your best game accounts here.</p>
+
+</body>
+
+</html>
