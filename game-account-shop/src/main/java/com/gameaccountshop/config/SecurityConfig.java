@@ -14,16 +14,31 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10); // NFR-011: BCrypt with min 10 rounds
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(authz -> authz
-                .anyRequest().permitAll() // TODO: Configure proper security in Epic 1 stories
+            .authorizeHttpRequests((requests) -> requests
+                .requestMatchers("/", "/home", "/auth/**", "/css/**", "/js/**", "/images/**").permitAll()
+                .anyRequest().authenticated()
             )
-            .csrf(csrf -> csrf.disable()); // Disable CSRF for MVP development
+            .formLogin((form) -> form
+                .loginPage("/auth/login")
+                .loginProcessingUrl("/auth/login")
+                .defaultSuccessUrl("/")
+                .failureUrl("/auth/login?error")
+                .permitAll()
+            )
+            .logout((logout) -> logout
+                .logoutUrl("/auth/logout")
+                .logoutSuccessUrl("/?logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            );
+
         return http.build();
     }
 }
