@@ -103,13 +103,7 @@ CREATE TABLE reviews (
 COMMENT='Buyer reviews and ratings for sellers - rating 1-5 stars';
 
 -- ===================================================================
--- INSERT DEFAULT ADMIN ACCOUNT
--- Username: admin
--- Password: admin123 (BCrypt hashed - 10 rounds)
--- Role: ADMIN
--- ===================================================================
-INSERT INTO users (username, password, role) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN');
+
 
 -- ===================================================================
 -- MIGRATION COMPLETE

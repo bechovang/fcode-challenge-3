@@ -11,12 +11,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -35,9 +40,24 @@ class ListingControllerTest {
 
     private MockMvc mockMvc;
 
+    private TestingAuthenticationToken authentication;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(listingController).build();
+
+        // Create test authentication token
+        User testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testuser");
+
+        authentication = new TestingAuthenticationToken(
+            testUser,
+            null,
+            List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        authentication.setAuthenticated(true);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @Test
@@ -74,9 +94,7 @@ class ListingControllerTest {
         when(bindingResult.hasErrors()).thenReturn(false);
 
         // When
-        String result = listingController.createListing(dto, bindingResult,
-            org.springframework.security.core.TestingAuthenticationToken.testAuthentication(),
-            redirectAttributes);
+        String result = listingController.createListing(dto, bindingResult, authentication, redirectAttributes);
 
         // Then
         assertEquals("redirect:/", result);
@@ -95,9 +113,7 @@ class ListingControllerTest {
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // When
-        String result = listingController.createListing(dto, bindingResult,
-            org.springframework.security.core.TestingAuthenticationToken.testAuthentication(),
-            redirectAttributes);
+        String result = listingController.createListing(dto, bindingResult, authentication, redirectAttributes);
 
         // Then
         assertEquals("listing/create", result);
