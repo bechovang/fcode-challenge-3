@@ -94,6 +94,7 @@
 
     <!-- Not logged in -->
     <div class="nav-links" sec:authorize="isAnonymous()">
+      <a href="/">Danh sách</a>
       <span style="color: #95a5a6;">🔓 Not logged in</span>
       <a href="/auth/login">Đăng nhập</a>
       <a href="/auth/register">Đăng ký</a>
@@ -103,7 +104,7 @@
     <div class="nav-user" sec:authorize="isAuthenticated()">
       <span class="login-status">🟢 Online</span>
       <div class="nav-links">
-        <a href="/">Trang chủ</a>
+        <a href="/">Danh sách</a>
         <a th:href="@{/listing/create}">Đăng bán</a>
       </div>
       <span>| Xin chào, <span class="username" sec:authentication="name">User</span>!</span>

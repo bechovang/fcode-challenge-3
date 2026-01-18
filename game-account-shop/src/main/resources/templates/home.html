@@ -3,23 +3,12 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Game Account Shop</title>
+  <title>Game Account Shop - Danh sách tài khoản</title>
   <style>
     .content {
       max-width: 1200px;
       margin: 0 auto;
       padding: 40px 20px;
-    }
-
-    h1 {
-      color: #2c3e50;
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-
-    p {
-      color: #7f8c8d;
-      font-size: 18px;
     }
 
     .success {
@@ -39,6 +28,104 @@
       margin-bottom: 20px;
       border: 1px solid #f5c6cb;
     }
+
+    .search-filter {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .search-filter input,
+    .search-filter select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    .search-filter button {
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .search-filter button:hover {
+      background: #2980b9;
+    }
+
+    /* 3-column grid layout */
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    /* Responsive: 1 column on mobile */
+    @media (max-width: 768px) {
+      .listings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .listing-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background: white;
+      transition: box-shadow 0.3s;
+    }
+
+    .listing-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .listing-card .game-name {
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .listing-card .rank {
+      color: #7f8c8d;
+      margin: 5px 0;
+    }
+
+    .listing-card .price {
+      color: #27ae60;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .listing-card .seller {
+      color: #3498db;
+      margin: 5px 0;
+    }
+
+    .listing-card .date {
+      color: #95a5a6;
+      font-size: 12px;
+      margin: 5px 0;
+    }
+
+    .listing-card .description {
+      color: #7f8c8d;
+      font-size: 14px;
+      margin: 10px 0;
+      line-height: 1.4;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 60px 20px;
+      color: #7f8c8d;
+      font-size: 18px;
+    }
   </style>
 </head>
 
@@ -47,6 +134,7 @@
   <div th:replace="~{layout/header :: navbar}"></div>
 
   <div class="content">
+    <!-- Flash Messages -->
     <div th:if="${param.logout}" class="success">
       ✅ Đăng xuất thành công!
     </div>
@@ -55,7 +143,6 @@
       ✅ Đăng ký thành công!
     </div>
 
-    <!-- Flash messages for RedirectAttributes -->
     <div th:if="${successMessage}" class="success">
       <span th:text="${successMessage}">Success message</span>
     </div>
@@ -64,8 +151,75 @@
       <span th:text="${errorMessage} ?: 'Đã có lỗi xảy ra. Vui lòng thử lại.'">Error message</span>
     </div>
 
-    <h1>Chào mừng đến với Game Account Shop</h1>
-    <p>Tìm kiếm tài khoản game tốt nhất tại đây.</p>
+    <!-- Page Title -->
+    <h1 style="color: #2c3e50; margin-bottom: 20px;">Danh sách tài khoản</h1>
+
+    <!-- Search & Filter Form at top of page -->
+    <div class="search-filter">
+      <form th:action="@{/}" method="get">
+        <input type="text"
+               name="search"
+               placeholder="Tìm theo tên game..."
+               th:value="${search}"
+               style="width: 200px;">
+        <select name="rank" style="width: 150px;">
+          <option value="">Tất cả rank</option>
+          <option value="Iron" th:selected="${rank == 'Iron'}">Iron</option>
+          <option value="Bronze" th:selected="${rank == 'Bronze'}">Bronze</option>
+          <option value="Silver" th:selected="${rank == 'Silver'}">Silver</option>
+          <option value="Gold" th:selected="${rank == 'Gold'}">Gold</option>
+          <option value="Platinum" th:selected="${rank == 'Platinum'}">Platinum</option>
+          <option value="Emerald" th:selected="${rank == 'Emerald'}">Emerald</option>
+          <option value="Diamond" th:selected="${rank == 'Diamond'}">Diamond</option>
+          <option value="Master" th:selected="${rank == 'Master'}">Master</option>
+          <option value="Grandmaster" th:selected="${rank == 'Grandmaster'}">Grandmaster</option>
+          <option value="Challenger" th:selected="${rank == 'Challenger'}">Challenger</option>
+        </select>
+        <button type="submit">Tìm kiếm</button>
+        <a th:href="@{/}" style="margin-left: 10px; color: #3498db;">Reset</a>
+      </form>
+    </div>
+
+    <!-- Listings Grid: 3 columns, responsive to 1 on mobile -->
+    <div th:if="${listings != null and !listings.empty}" class="listings-grid">
+      <div th:each="listing : ${listings}" class="listing-card">
+        <!-- Game Name: Always "Liên Minh Huyền Thoại" for LoL-only MVP -->
+        <div class="game-name" th:text="${listing.gameName}">Liên Minh Huyền Thoại</div>
+
+        <!-- Rank -->
+        <div class="rank">
+          Rank: <strong th:text="${listing.accountRank}">Gold III</strong>
+        </div>
+
+        <!-- Price: Formatted with comma separator -->
+        <div class="price">
+          <span th:text="${#numbers.formatInteger(listing.price, 3, 'POINT')}">500,000</span> VNĐ
+        </div>
+
+        <!-- Seller Username -->
+        <div class="seller">
+          Người bán: <span th:text="${listing.sellerUsername}">seller123</span>
+        </div>
+
+        <!-- Creation Date: DD/MM/YYYY format -->
+        <div class="date">
+          Đăng ngày: <span th:text="${#temporals.format(listing.createdAt, 'dd/MM/yyyy')}">18/01/2026</span>
+        </div>
+
+        <!-- Description Preview: First 100 characters -->
+        <div class="description" th:if="${listing.description}">
+          <span th:text="${#strings.substring(listing.description, 0, T(java.lang.Math).min(100, #strings.length(listing.description)))}">Description preview...</span>
+          <span th:if="${#strings.length(listing.description) > 100}">...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${listings == null or listings.empty}" class="empty-message">
+      <h2>Không tìm thấy tài khoản nào</h2>
+      <p>Thử thay đổi điều kiện tìm kiếm hoặc lọc nhé!</p>
+      <a th:href="@{/}" style="color: #3498db; text-decoration: none; font-weight: bold;">Xem tất cả tài khoản</a>
+    </div>
   </div>
 
 </body>
