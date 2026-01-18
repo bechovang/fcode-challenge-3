@@ -5,6 +5,9 @@
 -- This migration creates all tables needed for the 14-story MVP
 -- Designed for newbie developers - simple and straightforward
 -- IMPORTANT: Database must be created BEFORE running this script
+-- Story 2.1: Create Listing uses simplified form (Rank, Price, Description)
+-- - game_name defaults to 'Liên Minh Huyền Thoại' (LoL-only MVP)
+-- - price uses BIGINT (not DECIMAL) with minimum 2,000 VNĐ for banking
 -- ===================================================================
 
 -- ===================================================================
@@ -32,9 +35,9 @@ COMMENT='User accounts for authentication - roles: USER, ADMIN';
 CREATE TABLE game_accounts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     seller_id BIGINT NOT NULL COMMENT 'Foreign key to users.id',
-    game_name VARCHAR(100) NOT NULL COMMENT 'e.g., Liên Minh Huyền Thoại',
+    game_name VARCHAR(100) DEFAULT 'Liên Minh Huyền Thoại' COMMENT 'Default: LoL (MVP is LoL-only)',
     account_rank VARCHAR(50) NOT NULL COMMENT 'e.g., Gold, Diamond',
-    price DECIMAL(12,2) NOT NULL CHECK (price > 0) COMMENT 'Price in VNĐ',
+    price BIGINT NOT NULL CHECK (price > 2000) COMMENT 'Price in VNĐ (min 2,000 for banking)',
     description TEXT COMMENT 'Account details and description',
     status ENUM('PENDING', 'APPROVED', 'REJECTED', 'SOLD') NOT NULL DEFAULT 'PENDING',
     rejection_reason VARCHAR(500) COMMENT 'Reason if listing was rejected',
@@ -42,7 +45,6 @@ CREATE TABLE game_accounts (
     sold_at TIMESTAMP NULL COMMENT 'Set when status becomes SOLD',
     INDEX idx_seller_id (seller_id),
     INDEX idx_status (status),
-    INDEX idx_game_name (game_name) COMMENT 'For search by game name',
     INDEX idx_account_rank (account_rank) COMMENT 'For filter by rank',
     INDEX idx_created_at (created_at DESC) COMMENT 'For sorting newest first',
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE

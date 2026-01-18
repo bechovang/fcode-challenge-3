@@ -102,7 +102,11 @@
     <!-- Logged in -->
     <div class="nav-user" sec:authorize="isAuthenticated()">
       <span class="login-status">🟢 Online</span>
-      <span>Xin chào, <span class="username" sec:authentication="name">User</span>!</span>
+      <div class="nav-links">
+        <a href="/">Trang chủ</a>
+        <a th:href="@{/listing/create}">Đăng bán</a>
+      </div>
+      <span>| Xin chào, <span class="username" sec:authentication="name">User</span>!</span>
       <form th:action="@{/auth/logout}" method="post" style="display:inline;">
         <button type="submit" class="logout-btn">Đăng xuất</button>
       </form>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Lỗi - Game Account Shop</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 100px auto;
+      padding: 40px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .error-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #e74c3c;
+      margin-bottom: 20px;
+    }
+
+    .error-message {
+      color: #7f8c8d;
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+
+    .back-link {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+
+    .back-link:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="container">
+    <div class="error-icon">⚠️</div>
+    <h1>Đã có lỗi xảy ra</h1>
+
+    <div th:if="${errorMessage}" class="error-message">
+      <span th:text="${errorMessage}">Error message here</span>
+    </div>
+
+    <div th:if="${errorMessage == null}" class="error-message">
+      Đã có lỗi xảy ra. Vui lòng thử lại sau.
+    </div>
+
+    <a th:href="@{/}" class="back-link">Quay lại trang chủ</a>
+  </div>
+
+</body>
+</html>

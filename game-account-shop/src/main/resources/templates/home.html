@@ -30,6 +30,15 @@
       margin-bottom: 20px;
       border: 1px solid #c3e6cb;
     }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #f5c6cb;
+    }
   </style>
 </head>
 
@@ -44,6 +53,15 @@
 
     <div th:if="${param.success}" class="success">
       ✅ Đăng ký thành công!
+    </div>
+
+    <!-- Flash messages for RedirectAttributes -->
+    <div th:if="${successMessage}" class="success">
+      <span th:text="${successMessage}">Success message</span>
+    </div>
+
+    <div th:if="${errorMessage}" class="error">
+      <span th:text="${errorMessage} ?: 'Đã có lỗi xảy ra. Vui lòng thử lại.'">Error message</span>
     </div>
 
     <h1>Chào mừng đến với Game Account Shop</h1>

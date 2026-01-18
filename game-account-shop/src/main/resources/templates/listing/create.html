@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng bán tài khoản - Game Account Shop</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #34495e;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #27ae60;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    button {
+      padding: 12px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #229954;
+    }
+
+    .message {
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .text-danger {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .back-link a {
+      color: #27ae60;
+      text-decoration: none;
+    }
+
+    .back-link a:hover {
+      text-decoration: underline;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="container">
+    <h2>Đăng bán tài khoản</h2>
+
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="message success">
+      <span th:text="${successMessage}">Success message here</span>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="message error">
+      <span th:text="${errorMessage}">Error message here</span>
+    </div>
+
+    <form th:action="@{/listing/create}" th:object="${gameAccountDto}" method="post">
+
+      <!-- Rank/Level Field -->
+      <div class="form-group">
+        <label for="accountRank">Rank / Cấp độ *</label>
+        <input type="text"
+               id="accountRank"
+               th:field="*{accountRank}"
+               placeholder="Ví dụ: Gold III, Diamond II, Platinum I...">
+        <div class="text-danger" th:if="${#fields.hasErrors('accountRank')}"
+             th:errors="*{accountRank}">Rank is required</div>
+      </div>
+
+      <!-- Price Field -->
+      <div class="form-group">
+        <label for="price">Giá bán (VNĐ) *</label>
+        <input type="number"
+               id="price"
+               th:field="*{price}"
+               placeholder="Nhập giá bán (tối thiểu 2,001 VNĐ)"
+               min="2001">
+        <div class="text-danger" th:if="${#fields.hasErrors('price')}"
+             th:errors="*{price}">Price validation error</div>
+        <div class="help-text">Giá tối thiểu: 2,000 VNĐ</div>
+      </div>
+
+      <!-- Description Field -->
+      <div class="form-group">
+        <label for="description">Mô tả *</label>
+        <textarea id="description"
+                  th:field="*{description}"
+                  rows="6"
+                  placeholder="Mô tả chi tiết về tài khoản (số lượng tướng, trang phục, cấp độ...)"></textarea>
+        <div class="text-danger" th:if="${#fields.hasErrors('description')}"
+             th:errors="*{description}">Description is required</div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit">Đăng bán ngay</button>
+
+    </form>
+
+    <div class="back-link">
+      <a th:href="@{/}">Quay lại trang chủ</a>
+    </div>
+  </div>
+
+</body>
+</html>
