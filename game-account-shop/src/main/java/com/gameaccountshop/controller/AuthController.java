@@ -1,14 +1,18 @@
 package com.gameaccountshop.controller;
 
-import com.gameaccountshop.entity.User;
+import com.gameaccountshop.dto.UserRegistrationRequest;
+import com.gameaccountshop.exception.BusinessException;
 import com.gameaccountshop.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/auth")
@@ -21,27 +25,48 @@ public class AuthController {
         this.userService = userService;
     }
 
+    /**
+     * Show registration form
+     * @param model Spring MVC model
+     * @return registration template name
+     */
     @GetMapping("/register")
     public String showRegisterForm(Model model) {
-        model.addAttribute("user", new User());
+        model.addAttribute("userRequest", new UserRegistrationRequest());
         return "auth/register";
     }
 
+    /**
+     * Process user registration
+     * @param request UserRegistrationRequest with @Valid for Bean validation
+     * @param result BindingResult for validation errors
+     * @param model Spring MVC model
+     * @param redirectAttributes RedirectAttributes for flash messages
+     * @return redirect to home page on success, registration form on error
+     */
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute("user") User user, Model model) {
+    public String registerUser(@Valid @ModelAttribute("userRequest") UserRegistrationRequest request,
+                               BindingResult result,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            return "auth/register";
+        }
+
         try {
-            if (user.getPassword().length() < 6) {
-                 model.addAttribute("error", "Mật khẩu phải có ít nhất 6 ký tự");
-                 return "auth/register";
-            }
-            userService.registerUser(user);
-            return "redirect:/auth/login?success";
-        } catch (IllegalArgumentException e) {
+            userService.registerUser(request);
+            redirectAttributes.addFlashAttribute("message", "Đăng ký thành công!");
+            return "redirect:/?success";
+        } catch (BusinessException e) {
             model.addAttribute("error", e.getMessage());
             return "auth/register";
         }
     }
 
+    /**
+     * Show login form
+     * @return login template name
+     */
     @GetMapping("/login")
     public String showLoginForm() {
         return "auth/login";

@@ -5,63 +5,50 @@
   <meta charset="UTF-8">
   <title>Game Account Shop</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 20px;
+    .content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
     }
 
-    nav {
-      margin-bottom: 20px;
-      padding: 10px;
-      background: #f0f0f0;
+    h1 {
+      color: #2c3e50;
+      font-size: 32px;
+      margin-bottom: 10px;
     }
 
-    nav a {
-      margin-right: 15px;
-      text-decoration: none;
-      color: #333;
-    }
-
-    nav a:hover {
-      text-decoration: underline;
-    }
-
-    .logout-form {
-      display: inline;
-    }
-
-    .error {
-      color: red;
+    p {
+      color: #7f8c8d;
+      font-size: 18px;
     }
 
     .success {
-      color: green;
+      background: #d4edda;
+      color: #155724;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #c3e6cb;
     }
   </style>
 </head>
 
 <body>
 
-  <nav>
-    <a href="/">Home</a>
-    <span sec:authorize="isAnonymous()">
-      <a href="/auth/login">Login</a>
-      <a href="/auth/register">Register</a>
-    </span>
-    <span sec:authorize="isAuthenticated()">
-      <span>Welcome, <span sec:authentication="name">User</span>!</span>
-      <form th:action="@{/auth/logout}" method="post" class="logout-form">
-        <button type="submit">Logout</button>
-      </form>
-    </span>
-  </nav>
+  <div th:replace="~{layout/header :: navbar}"></div>
 
-  <div th:if="${param.logout}" class="success">
-    Đăng xuất thành công!
+  <div class="content">
+    <div th:if="${param.logout}" class="success">
+      ✅ Đăng xuất thành công!
+    </div>
+
+    <div th:if="${param.success}" class="success">
+      ✅ Đăng ký thành công!
+    </div>
+
+    <h1>Chào mừng đến với Game Account Shop</h1>
+    <p>Tìm kiếm tài khoản game tốt nhất tại đây.</p>
   </div>
-
-  <h1>Welcome to Game Account Shop</h1>
-  <p>Find your best game accounts here.</p>
 
 </body>
 

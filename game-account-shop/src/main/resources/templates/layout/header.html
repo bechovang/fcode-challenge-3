@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head">
+  <meta charset="UTF-8">
+  <title>Game Account Shop</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      background: #2c3e50;
+      padding: 15px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #ecf0f1;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #3498db;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      color: white;
+      font-size: 14px;
+    }
+
+    .nav-user .username {
+      color: #3498db;
+      font-weight: bold;
+    }
+
+    .logout-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: #c0392b;
+    }
+
+    .login-status {
+      background: #27ae60;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav th:fragment="navbar">
+  <div class="nav-content">
+    <a href="/" class="nav-brand">🎮 Game Account Shop</a>
+
+    <!-- Not logged in -->
+    <div class="nav-links" sec:authorize="isAnonymous()">
+      <span style="color: #95a5a6;">🔓 Not logged in</span>
+      <a href="/auth/login">Đăng nhập</a>
+      <a href="/auth/register">Đăng ký</a>
+    </div>
+
+    <!-- Logged in -->
+    <div class="nav-user" sec:authorize="isAuthenticated()">
+      <span class="login-status">🟢 Online</span>
+      <span>Xin chào, <span class="username" sec:authentication="name">User</span>!</span>
+      <form th:action="@{/auth/logout}" method="post" style="display:inline;">
+        <button type="submit" class="logout-btn">Đăng xuất</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+</body>
+</html>

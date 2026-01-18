@@ -1,5 +1,10 @@
 # BMAD Framework Outputs
-_bmad-output/
+# Ignore toàn bộ BMAD output
+_bmad-output/**
+
+# Nhưng cho phép thư mục implementation-artifacts
+!_bmad-output/implementation-artifacts/
+!_bmad-output/implementation-artifacts/**/*.md
 
 # Claude AI
 .claude/
@@ -22,3 +27,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+
+nul
