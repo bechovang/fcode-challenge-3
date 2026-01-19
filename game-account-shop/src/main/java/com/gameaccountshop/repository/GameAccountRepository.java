@@ -30,7 +30,8 @@ public interface GameAccountRepository extends JpaRepository<GameAccount, Long> 
            "AND (:search IS NULL OR (" +
            "   LOWER(g.gameName) LIKE CONCAT('%', LOWER(:search), '%') " +
            "   OR LOWER(g.description) LIKE CONCAT('%', LOWER(:search), '%') " +
-           "   OR LOWER(g.accountRank) LIKE CONCAT('%', LOWER(:search), '%')" +
+           "   OR LOWER(g.accountRank) LIKE CONCAT('%', LOWER(:search), '%') " +
+           "   OR g.sellerId IN (SELECT u.id FROM User u WHERE LOWER(u.username) LIKE CONCAT('%', LOWER(:search), '%'))" +
            "))")
     List<GameAccount> findApprovedListings(@Param("search") String search,
                                            @Param("rank") String rank,

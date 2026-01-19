@@ -182,4 +182,34 @@ class GameAccountRepositoryTest {
         // Then
         assertFalse(result.isPresent());
     }
+
+    @Test
+    void findApprovedListings_SearchBySellerName_ReturnsAccounts() {
+        // Given
+        entityManager.persist(testAccount1); // seller1 (Gold III, Pending - Wait, status is pending?)
+        // Let's create an approved account for seller1
+        GameAccount seller1Approved = new GameAccount();
+        seller1Approved.setAccountRank("Platinum IV");
+        seller1Approved.setPrice(600000L);
+        seller1Approved.setDescription("Approved account by seller1");
+        seller1Approved.setSellerId(seller1Id);
+        seller1Approved.setStatus(ListingStatus.APPROVED);
+        entityManager.persist(seller1Approved);
+
+        // seller2 account is approved
+        entityManager.persist(testAccount2);
+        entityManager.flush();
+
+        // When - search for "seller1"
+        List<GameAccount> result = gameAccountRepository.findApprovedListings(
+            "seller1", null, ListingStatus.APPROVED, org.springframework.data.domain.Sort.unsorted()
+        );
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("Platinum IV", result.get(0).getAccountRank());
+        assertEquals(seller1Id, result.get(0).getSellerId());
+    }
+
 }
