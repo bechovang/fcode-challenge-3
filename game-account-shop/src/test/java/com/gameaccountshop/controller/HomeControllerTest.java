@@ -65,7 +65,7 @@ class HomeControllerTest {
     @Test
     void home_NoParameters_ReturnsAllApprovedListings() throws Exception {
         // Given
-        when(gameAccountService.findApprovedListings(isNull(), isNull()))
+        when(gameAccountService.findApprovedListings(isNull(), isNull(), isNull()))
             .thenReturn(mockListings);
 
         // When & Then
@@ -74,14 +74,14 @@ class HomeControllerTest {
             .andExpect(view().name("home"))
             .andExpect(model().attributeExists("listings"));
 
-        verify(gameAccountService, times(1)).findApprovedListings(isNull(), isNull());
+        verify(gameAccountService, times(1)).findApprovedListings(isNull(), isNull(), isNull());
     }
 
     @Test
     void home_WithSearchParameter_PassesSearchToService() throws Exception {
         // Given
         String searchTerm = "Liên Minh";
-        when(gameAccountService.findApprovedListings(eq(searchTerm), isNull()))
+        when(gameAccountService.findApprovedListings(eq(searchTerm), isNull(), isNull()))
             .thenReturn(mockListings);
 
         // When & Then
@@ -91,14 +91,14 @@ class HomeControllerTest {
             .andExpect(model().attributeExists("listings"))
             .andExpect(model().attribute("search", searchTerm));
 
-        verify(gameAccountService, times(1)).findApprovedListings(eq(searchTerm), isNull());
+        verify(gameAccountService, times(1)).findApprovedListings(eq(searchTerm), isNull(), isNull());
     }
 
     @Test
     void home_WithRankParameter_PassesRankToService() throws Exception {
         // Given
         String rank = "Gold";
-        when(gameAccountService.findApprovedListings(isNull(), eq(rank)))
+        when(gameAccountService.findApprovedListings(isNull(), eq(rank), isNull()))
             .thenReturn(List.of(mockListings.get(0)));
 
         // When & Then
@@ -108,7 +108,7 @@ class HomeControllerTest {
             .andExpect(model().attributeExists("listings"))
             .andExpect(model().attribute("rank", rank));
 
-        verify(gameAccountService, times(1)).findApprovedListings(isNull(), eq(rank));
+        verify(gameAccountService, times(1)).findApprovedListings(isNull(), eq(rank), isNull());
     }
 
     @Test
@@ -116,7 +116,7 @@ class HomeControllerTest {
         // Given
         String searchTerm = "Liên Minh";
         String rank = "Gold";
-        when(gameAccountService.findApprovedListings(eq(searchTerm), eq(rank)))
+        when(gameAccountService.findApprovedListings(eq(searchTerm), eq(rank), isNull()))
             .thenReturn(List.of(mockListings.get(0)));
 
         // When & Then
@@ -129,13 +129,13 @@ class HomeControllerTest {
             .andExpect(model().attribute("search", searchTerm))
             .andExpect(model().attribute("rank", rank));
 
-        verify(gameAccountService, times(1)).findApprovedListings(eq(searchTerm), eq(rank));
+        verify(gameAccountService, times(1)).findApprovedListings(eq(searchTerm), eq(rank), isNull());
     }
 
     @Test
     void home_EmptyListings_ReturnsEmptyList() throws Exception {
         // Given
-        when(gameAccountService.findApprovedListings(isNull(), isNull()))
+        when(gameAccountService.findApprovedListings(isNull(), isNull(), isNull()))
             .thenReturn(List.of());
 
         // When & Then
@@ -144,14 +144,14 @@ class HomeControllerTest {
             .andExpect(view().name("home"))
             .andExpect(model().attributeExists("listings"));
 
-        verify(gameAccountService, times(1)).findApprovedListings(isNull(), isNull());
+        verify(gameAccountService, times(1)).findApprovedListings(isNull(), isNull(), isNull());
     }
 
     @Test
     void home_CaseInsensitiveSearch_WorksCorrectly() throws Exception {
         // Given - test lowercase search
         String searchTermLower = "liên minh"; // lowercase
-        when(gameAccountService.findApprovedListings(eq(searchTermLower), isNull()))
+        when(gameAccountService.findApprovedListings(eq(searchTermLower), isNull(), isNull()))
             .thenReturn(mockListings);
 
         // When & Then
@@ -159,6 +159,6 @@ class HomeControllerTest {
             .andExpect(status().isOk())
             .andExpect(model().attribute("search", searchTermLower));
 
-        verify(gameAccountService, times(1)).findApprovedListings(eq(searchTermLower), isNull());
+        verify(gameAccountService, times(1)).findApprovedListings(eq(searchTermLower), isNull(), isNull());
     }
 }

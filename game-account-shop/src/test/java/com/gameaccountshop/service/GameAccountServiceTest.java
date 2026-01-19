@@ -135,17 +135,18 @@ class GameAccountServiceTest {
     void findApprovedListings_ReturnsApprovedAccounts() {
         // Given
         List<GameAccount> expected = Arrays.asList(testEntity);
-        when(gameAccountRepository.findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED))
+        // Match any Sort object
+        when(gameAccountRepository.findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(expected);
 
         // When
-        List<GameAccount> result = gameAccountService.findApprovedListings();
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, null, null);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
 
-        verify(gameAccountRepository, times(1)).findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED);
+        verify(gameAccountRepository, times(1)).findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class));
     }
 
     // ========================================================================
@@ -156,18 +157,18 @@ class GameAccountServiceTest {
     void findApprovedListingsWithParams_NoFilters_ReturnsAllApproved() {
         // Given
         List<GameAccount> approvedAccounts = Arrays.asList(testEntity);
-        when(gameAccountRepository.findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED))
+        when(gameAccountRepository.findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(approvedAccounts);
         when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
 
         // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, null);
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, null, null);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("seller1", result.get(0).getSellerUsername());
-        verify(gameAccountRepository, times(1)).findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED);
+        verify(gameAccountRepository, times(1)).findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class));
         verify(userRepository, times(1)).findAllById(any());
     }
 
@@ -175,36 +176,34 @@ class GameAccountServiceTest {
     void findApprovedListingsWithParams_WithSearchOnly_CallsSearchRepository() {
         // Given
         String searchTerm = "Liên Minh";
-        when(gameAccountRepository.findByGameNameContainingAndStatus(eq(searchTerm), eq(ListingStatus.APPROVED)))
+        when(gameAccountRepository.findApprovedListings(eq(searchTerm), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(Arrays.asList(testEntity));
         when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
 
         // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(searchTerm, null);
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(searchTerm, null, null);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(gameAccountRepository, times(1)).findByGameNameContainingAndStatus(eq(searchTerm), eq(ListingStatus.APPROVED));
-        verify(gameAccountRepository, never()).findByStatusAndAccountRank(any(), any());
+        verify(gameAccountRepository, times(1)).findApprovedListings(eq(searchTerm), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class));
     }
 
     @Test
     void findApprovedListingsWithParams_WithRankOnly_CallsRankRepository() {
         // Given
         String rank = "Gold";
-        when(gameAccountRepository.findByStatusAndAccountRank(eq(rank), eq(ListingStatus.APPROVED)))
+        when(gameAccountRepository.findApprovedListings(isNull(), eq(rank), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(Arrays.asList(testEntity));
         when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
 
         // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, rank);
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, rank, null);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(gameAccountRepository, times(1)).findByStatusAndAccountRank(eq(rank), eq(ListingStatus.APPROVED));
-        verify(gameAccountRepository, never()).findByGameNameContainingAndStatus(any(), any());
+        verify(gameAccountRepository, times(1)).findApprovedListings(isNull(), eq(rank), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class));
     }
 
     @Test
@@ -219,36 +218,29 @@ class GameAccountServiceTest {
         goldEntity.setSellerId(1L);
         goldEntity.setStatus(ListingStatus.APPROVED);
 
-        GameAccount diamondEntity = new GameAccount();
-        diamondEntity.setId(3L);
-        diamondEntity.setGameName("Liên Minh Huyền Thoại");
-        diamondEntity.setAccountRank("Diamond II");
-        diamondEntity.setSellerId(1L);
-        diamondEntity.setStatus(ListingStatus.APPROVED);
-
-        List<GameAccount> byRank = Arrays.asList(goldEntity, diamondEntity);
-        when(gameAccountRepository.findByStatusAndAccountRank(eq(rank), eq(ListingStatus.APPROVED)))
+        List<GameAccount> byRank = Arrays.asList(goldEntity);
+        // The repository now handles combination, so we mock the result directly
+        when(gameAccountRepository.findApprovedListings(eq(searchTerm), eq(rank), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(byRank);
         when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
 
         // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(searchTerm, rank);
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(searchTerm, rank, null);
 
         // Then
         assertNotNull(result);
-        // Both match search term, so both should be returned
-        assertEquals(2, result.size());
-        verify(gameAccountRepository, times(1)).findByStatusAndAccountRank(eq(rank), eq(ListingStatus.APPROVED));
+        assertEquals(1, result.size());
+        verify(gameAccountRepository, times(1)).findApprovedListings(eq(searchTerm), eq(rank), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class));
     }
 
     @Test
     void findApprovedListingsWithParams_EmptyResults_ReturnsEmptyList() {
         // Given
-        when(gameAccountRepository.findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED))
+        when(gameAccountRepository.findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(List.of());
 
         // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, null);
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(null, null, null);
 
         // Then
         assertNotNull(result);
@@ -257,35 +249,40 @@ class GameAccountServiceTest {
     }
 
     @Test
-    void findApprovedListingsWithParams_BlankSearchString_TreatedAsNoFilter() {
-        // Given
-        when(gameAccountRepository.findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED))
+    void findApprovedListingsWithParams_AliasSearch_MapsAliasCorrectly() {
+        // Given - alias "lol"
+        String alias = "lol";
+        String expectedMapped = "Liên Minh Huyền Thoại";
+
+        when(gameAccountRepository.findApprovedListings(eq(expectedMapped), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
             .thenReturn(Arrays.asList(testEntity));
         when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
 
         // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings("   ", null);
-
-        // Then
-        assertNotNull(result);
-        verify(gameAccountRepository, times(1)).findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED);
-    }
-
-    @Test
-    void findApprovedListingsWithParams_CaseInsensitiveSearch_WorksCorrectly() {
-        // Given - lowercase search term
-        String searchTermLower = "liên minh"; // lowercase
-        when(gameAccountRepository.findByGameNameContainingAndStatus(eq(searchTermLower), eq(ListingStatus.APPROVED)))
-            .thenReturn(Arrays.asList(testEntity));
-        when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
-
-        // When
-        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(searchTermLower, null);
+        List<ListingDisplayDto> result = gameAccountService.findApprovedListings(alias, null, null);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(gameAccountRepository, times(1)).findByGameNameContainingAndStatus(eq(searchTermLower), eq(ListingStatus.APPROVED));
+        // Verify repository was called with the MAPPED name, not the alias
+        verify(gameAccountRepository, times(1)).findApprovedListings(eq(expectedMapped), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class));
+    }
+
+    @Test
+    void findApprovedListingsWithParams_SortPriceAsc_SortsCorrectly() {
+        // Given
+        when(gameAccountRepository.findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), any(org.springframework.data.domain.Sort.class)))
+            .thenReturn(Arrays.asList(testEntity));
+        when(userRepository.findAllById(any())).thenReturn(Arrays.asList(testUser));
+
+        // When
+        gameAccountService.findApprovedListings(null, null, "price_asc");
+
+        // Then
+        // Verify sort parameter
+        verify(gameAccountRepository).findApprovedListings(isNull(), isNull(), eq(ListingStatus.APPROVED), argThat(sort ->
+            sort.getOrderFor("price") != null && sort.getOrderFor("price").isAscending()
+        ));
     }
 
     // ========================================================================
