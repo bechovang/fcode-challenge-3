@@ -43,7 +43,9 @@ public class GameAccount {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
         if (status == null) {
             status = ListingStatus.PENDING;
         }

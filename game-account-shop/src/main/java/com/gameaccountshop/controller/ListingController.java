@@ -1,21 +1,24 @@
 package com.gameaccountshop.controller;
 
 import com.gameaccountshop.dto.GameAccountDto;
+import com.gameaccountshop.dto.ListingDetailDto;
 import com.gameaccountshop.entity.User;
 import com.gameaccountshop.repository.UserRepository;
 import com.gameaccountshop.service.GameAccountService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/listing")
+@RequestMapping("/listings")
 public class ListingController {
 
     private final GameAccountService gameAccountService;

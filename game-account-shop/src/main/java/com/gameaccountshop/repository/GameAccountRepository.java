@@ -1,5 +1,6 @@
 package com.gameaccountshop.repository;
 
+import com.gameaccountshop.dto.ListingDetailDto;
 import com.gameaccountshop.dto.ListingDisplayDto;
 import com.gameaccountshop.entity.GameAccount;
 import com.gameaccountshop.enums.ListingStatus;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface GameAccountRepository extends JpaRepository<GameAccount, Long> {
@@ -28,4 +30,16 @@ public interface GameAccountRepository extends JpaRepository<GameAccount, Long> 
     // NEW for Story 2.2: Search by game name (case-insensitive SQL LIKE) with ORDER BY
     @Query("SELECT g FROM GameAccount g WHERE LOWER(g.gameName) LIKE CONCAT('%', LOWER(:search), '%') AND g.status = :status ORDER BY g.createdAt DESC")
     List<GameAccount> findByGameNameContainingAndStatus(@Param("search") String search, @Param("status") ListingStatus status);
+
+    // NEW for Story 2.3: Find a specific listing by ID with seller information
+    // Only returns APPROVED or SOLD listings (PENDING/REJECTED return empty Optional)
+    @Query("SELECT new com.gameaccountshop.dto.ListingDetailDto(" +
+           "g.id, g.gameName, g.accountRank, g.price, g.description, " +
+           "g.status, g.createdAt, g.soldAt, " +
+           "u.id, u.username, u.email) " +
+           "FROM GameAccount g " +
+           "LEFT JOIN User u ON g.sellerId = u.id " +
+           "WHERE g.id = :id " +
+           "  AND g.status IN ('APPROVED', 'SOLD')")
+    Optional<ListingDetailDto> findDetailById(@Param("id") Long id);
 }

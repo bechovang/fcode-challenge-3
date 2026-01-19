@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Chi tiết tài khoản - Game Account Shop</title>
+  <style>
+    .content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .detail-card {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .status-approved {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-sold {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .field-group {
+      margin: 20px 0;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .field-group:last-child {
+      border-bottom: none;
+    }
+
+    .field-label {
+      color: #7f8c8d;
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .field-value {
+      color: #2c3e50;
+      font-size: 18px;
+    }
+
+    .price {
+      color: #27ae60;
+      font-size: 36px;
+      font-weight: bold;
+    }
+
+    .description {
+      line-height: 1.8;
+      white-space: pre-wrap;
+      color: #34495e;
+      font-size: 16px;
+    }
+
+    .seller-info {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 25px 0;
+    }
+
+    .seller-link {
+      color: #3498db;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .seller-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn-buy {
+      display: inline-block;
+      padding: 18px 50px;
+      background: #27ae60;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 25px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-buy:hover:not(:disabled) {
+      background: #229954;
+    }
+
+    .btn-buy:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .sold-message {
+      color: #e74c3c;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 25px;
+      color: #3498db;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .empty-description {
+      color: #95a5a6;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="content">
+    <!-- Flash Error Message -->
+    <div th:if="${errorMessage}" style="background: #f8d7da; color: #721c24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+      <span th:text="${errorMessage}">Error message</span>
+    </div>
+
+    <div class="detail-card" th:if="${listing}">
+      <!-- Status Badge -->
+      <div style="margin-bottom: 25px;">
+        <span class="status-badge"
+              th:classappend="${listing.isApproved()} ? 'status-approved' : 'status-sold'"
+              th:text="${listing.isApproved()} ? 'ĐANG BÁN' : 'ĐÃ BÁN'">
+          ĐANG BÁN
+        </span>
+      </div>
+
+      <!-- Game Name -->
+      <div class="field-group">
+        <div class="field-label">Tên game</div>
+        <div class="field-value" style="font-size: 22px; font-weight: bold;" th:text="${listing.gameName}">Liên Minh Huyền Thoại</div>
+      </div>
+
+      <!-- Rank -->
+      <div class="field-group">
+        <div class="field-label">Rank</div>
+        <div class="field-value" style="font-size: 20px;" th:text="${listing.accountRank}">Gold III</div>
+      </div>
+
+      <!-- Price -->
+      <div class="field-group">
+        <div class="field-label">Giá bán</div>
+        <div class="price">
+          <span th:text="${#numbers.formatInteger(listing.price, 3, 'POINT')}">500.000</span> VNĐ
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="field-group">
+        <div class="field-label">Mô tả</div>
+        <div class="field-value description" th:if="${listing.description != null and !listing.description.empty}" th:text="${listing.description}">
+          Full description text here...
+        </div>
+        <div class="field-value empty-description" th:if="${listing.description == null or listing.description.empty}">
+          Không có mô tả
+        </div>
+      </div>
+
+      <!-- Seller Information -->
+      <div class="seller-info">
+        <div class="field-label">Người bán</div>
+        <div class="field-value">
+          <a th:href="@{/sellers/{id}(id=${listing.sellerId})}"
+             th:text="${listing.sellerUsername}"
+             class="seller-link">
+            seller123
+          </a>
+        </div>
+        <div style="margin-top: 12px;">
+          <span style="color: #7f8c8d;">Email liên hệ: </span>
+          <span th:text="${listing.sellerEmail}" style="color: #2c3e50;">seller@example.com</span>
+        </div>
+      </div>
+
+      <!-- Created Date -->
+      <div class="field-group">
+        <div class="field-label">Ngày đăng</div>
+        <div class="field-value">
+          <span th:text="${#temporals.format(listing.createdAt, 'dd/MM/yyyy')}">18/01/2026</span>
+        </div>
+      </div>
+
+      <!-- Buy Button (enabled for APPROVED, disabled for SOLD) -->
+      <div style="margin-top: 30px;">
+        <!-- APPROVED - Enabled Buy Button -->
+        <div th:if="${listing.isApproved()}">
+          <!-- TODO: Link to buy flow in Story 3.1 -->
+          <a href="#" class="btn-buy">Mua ngay</a>
+        </div>
+
+        <!-- SOLD - Disabled Button with Message -->
+        <div th:if="${listing.isSold()}">
+          <button class="btn-buy" disabled>Mua ngay</button>
+          <div class="sold-message">
+            <div>⚠️ Tài khoản này đã được bán</div>
+            <div style="font-size: 14px; margin-top: 5px; font-weight: normal;">Vui lòng xem các tài khoản khác</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN-ONLY: Mark as Sold Button (Story 2.5) -->
+      <div th:if="${#authorization.expression('hasRole(''ADMIN'')') and listing.isApproved()}"
+           style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
+        <div style="font-size: 14px; color: #856404; margin-bottom: 10px; font-weight: 500;">
+          ⚙️ Admin Actions
+        </div>
+        <form th:action="@{/admin/listings/{id}/mark-sold(id=${listing.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit"
+                  style="padding: 10px 20px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;"
+                  onmouseover="this.style.background='#d35400'"
+                  onmouseout="this.style.background='#e67e22'">
+            🏷️ Đánh dấu đã bán
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Back to listings link -->
+    <div style="text-align: center;">
+      <a th:href="@{/}" class="back-link">
+        ← Quay lại danh sách tài khoản
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>

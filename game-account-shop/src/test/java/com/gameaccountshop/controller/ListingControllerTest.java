@@ -4,6 +4,7 @@ import com.gameaccountshop.dto.GameAccountDto;
 import com.gameaccountshop.entity.GameAccount;
 import com.gameaccountshop.entity.User;
 import com.gameaccountshop.enums.ListingStatus;
+import com.gameaccountshop.repository.UserRepository;
 import com.gameaccountshop.service.GameAccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +37,9 @@ class ListingControllerTest {
     @Mock
     private GameAccountService gameAccountService;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private ListingController listingController;
 
@@ -46,14 +51,10 @@ class ListingControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(listingController).build();
 
-        // Create test authentication token
-        User testUser = new User();
-        testUser.setId(1L);
-        testUser.setUsername("testuser");
-
+        // Create test authentication token with String username as principal
         authentication = new TestingAuthenticationToken(
-            testUser,
-            null,
+            "testuser",  // principal (username)
+            null,        // credentials
             List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
         authentication.setAuthenticated(true);
@@ -62,7 +63,7 @@ class ListingControllerTest {
 
     @Test
     void showCreateForm_ReturnsCreateView() throws Exception {
-        mockMvc.perform(get("/listing/create"))
+        mockMvc.perform(get("/listings/create"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("listing/create"))
                 .andExpect(model().attributeExists("gameAccountDto"));
@@ -78,6 +79,7 @@ class ListingControllerTest {
 
         User user = new User();
         user.setId(1L);
+        user.setUsername("testuser");
 
         GameAccount saved = new GameAccount();
         saved.setId(1L);
@@ -87,6 +89,7 @@ class ListingControllerTest {
         saved.setSellerId(1L);
         saved.setStatus(ListingStatus.PENDING);
 
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(gameAccountService.createListing(any(GameAccountDto.class), eq(1L))).thenReturn(saved);
 
         RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
@@ -98,6 +101,7 @@ class ListingControllerTest {
 
         // Then
         assertEquals("redirect:/", result);
+        verify(userRepository, times(1)).findByUsername("testuser");
         verify(gameAccountService, times(1)).createListing(any(GameAccountDto.class), eq(1L));
         verify(redirectAttributes, times(1)).addFlashAttribute(eq("successMessage"), anyString());
     }

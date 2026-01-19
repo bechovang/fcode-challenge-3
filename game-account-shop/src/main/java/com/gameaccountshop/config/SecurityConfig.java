@@ -2,6 +2,7 @@ package com.gameaccountshop.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     /**
@@ -32,6 +34,9 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/", "/home", "/auth/**", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/listings/**").permitAll() // Public listing detail pages (Story 2.3)
+                .requestMatchers("/listing/create").hasRole("USER") // Seller create listing (Story 2.1)
+                .requestMatchers("/admin/**").hasRole("ADMIN") // Admin only (Story 2.4)
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form

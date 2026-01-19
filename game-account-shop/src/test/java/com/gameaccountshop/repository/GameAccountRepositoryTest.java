@@ -1,20 +1,26 @@
 package com.gameaccountshop.repository;
 
 import com.gameaccountshop.entity.GameAccount;
+import com.gameaccountshop.entity.User;
 import com.gameaccountshop.enums.ListingStatus;
+import com.gameaccountshop.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = Replace.NONE)
 class GameAccountRepositoryTest {
 
     @Autowired
@@ -25,22 +31,42 @@ class GameAccountRepositoryTest {
 
     private GameAccount testAccount1;
     private GameAccount testAccount2;
+    private Long seller1Id;  // Store for use in tests
 
     @BeforeEach
     void setUp() {
+        // Create test users first (required by foreign key constraint)
+        User user1 = new User();
+        user1.setUsername("seller1");
+        user1.setPassword("password1");
+        user1.setEmail("seller1@test.com");
+        user1.setRole(Role.USER);
+        entityManager.persist(user1);
+
+        User user2 = new User();
+        user2.setUsername("seller2");
+        user2.setPassword("password2");
+        user2.setEmail("seller2@test.com");
+        user2.setRole(Role.USER);
+        entityManager.persist(user2);
+        entityManager.flush();
+
+        // Store seller ID for use in tests
+        seller1Id = user1.getId();
+
         // Create test data
         testAccount1 = new GameAccount();
         testAccount1.setAccountRank("Gold III");
         testAccount1.setPrice(500000L);
         testAccount1.setDescription("Test account 1");
-        testAccount1.setSellerId(1L);
+        testAccount1.setSellerId(user1.getId());
         testAccount1.setStatus(ListingStatus.PENDING);
 
         testAccount2 = new GameAccount();
         testAccount2.setAccountRank("Diamond II");
         testAccount2.setPrice(1000000L);
         testAccount2.setDescription("Test account 2");
-        testAccount2.setSellerId(2L);
+        testAccount2.setSellerId(user2.getId());
         testAccount2.setStatus(ListingStatus.APPROVED);
     }
 
@@ -64,7 +90,7 @@ class GameAccountRepositoryTest {
         entityManager.flush();
 
         // When
-        List<GameAccount> result = gameAccountRepository.findBySellerId(1L);
+        List<GameAccount> result = gameAccountRepository.findBySellerId(seller1Id);
 
         // Then
         assertNotNull(result);
@@ -104,25 +130,23 @@ class GameAccountRepositoryTest {
 
     @Test
     void findByStatusOrderByCreatedAtDesc_ReturnsOrderedAccounts() {
-        // Given
+        // Given - set explicit timestamps to ensure reliable ordering
+        LocalDateTime earlierTime = LocalDateTime.of(2026, 1, 18, 10, 0);
+        LocalDateTime laterTime = LocalDateTime.of(2026, 1, 19, 10, 0);
+
+        testAccount2.setCreatedAt(earlierTime);
+        entityManager.persist(testAccount2); // First APPROVED (earlier timestamp)
+        entityManager.flush();
+
         GameAccount account3 = new GameAccount();
         account3.setAccountRank("Platinum I");
         account3.setPrice(2000000L);
         account3.setDescription("Latest account");
-        account3.setSellerId(1L);
+        account3.setSellerId(seller1Id);  // Use actual seller ID
         account3.setStatus(ListingStatus.APPROVED);
+        account3.setCreatedAt(laterTime);  // Later timestamp
 
-        entityManager.persist(testAccount2); // First APPROVED
-        entityManager.flush();
-
-        // Small delay to ensure different timestamps
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        entityManager.persist(account3); // Second APPROVED (later)
+        entityManager.persist(account3); // Second APPROVED (later timestamp)
         entityManager.flush();
 
         // When

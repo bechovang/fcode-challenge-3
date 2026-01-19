@@ -1,6 +1,6 @@
 # Story 2.4: Admin Approve/Reject Listings
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,51 +61,51 @@ So that **the marketplace shows only quality listings**.
 
 ## Tasks / Subtasks
 
-- [ ] Create AdminController with review endpoint (AC: #1, #2)
-  - [ ] @GetMapping /admin/review - show pending listings
-  - [ ] Add @PreAuthorize("hasRole('ADMIN')") for security
-  - [ ] Order by created_at ASC (oldest first)
-  - [ ] Pass listings to template
+- [x] Create AdminController with review endpoint (AC: #1, #2)
+  - [x] @GetMapping /admin/review - show pending listings
+  - [x] Add @PreAuthorize("hasRole('ADMIN')") for security
+  - [x] Order by created_at ASC (oldest first)
+  - [x] Pass listings to template
 
-- [ ] Create approval endpoint (AC: #3, #4, #5, #6)
-  - [ ] @PostMapping /admin/review/{id}/approve
-  - [ ] Update status to APPROVED
-  - [ ] Add success message "Đã duyệt tài khoản"
-  - [ ] Redirect back to /admin/review
+- [x] Create approval endpoint (AC: #3, #4, #5, #6)
+  - [x] @PostMapping /admin/review/{id}/approve
+  - [x] Update status to APPROVED
+  - [x] Add success message "Đã duyệt tài khoản"
+  - [x] Redirect back to /admin/review
 
-- [ ] Create rejection endpoint (AC: #7, #8, #9, #10)
-  - [ ] @PostMapping /admin/review/{id}/reject
-  - [ ] Accept @RequestParam String reason
-  - [ ] Update status to REJECTED
-  - [ ] Store rejection_reason
-  - [ ] Add success message "Đã từ chối tài khoản"
-  - [ ] Redirect back to /admin/review
+- [x] Create rejection endpoint (AC: #7, #8, #9, #10)
+  - [x] @PostMapping /admin/review/{id}/reject
+  - [x] Accept @RequestParam String reason
+  - [x] Update status to REJECTED
+  - [x] Store rejection_reason
+  - [x] Add success message "Đã từ chối tài khoản"
+  - [x] Redirect back to /admin/review
 
-- [ ] Add repository query methods (AC: #1)
-  - [ ] findByStatusOrderByCreatedAtAsc(ListingStatus.PENDING)
-  - [ ] Or: findByStatusOrderByCreatedAtAsc(String status)
+- [x] Add repository query methods (AC: #1)
+  - [x] findByStatusOrderByCreatedAtAsc(ListingStatus.PENDING)
+  - [x] Or: findByStatusOrderByCreatedAtAsc(String status)
 
-- [ ] Add service methods (AC: #5, #9)
-  - [ ] approveListing(Long id) - update status to APPROVED
-  - [ ] rejectListing(Long id, String reason) - update status to REJECTED with reason
-  - [ ] Add @Slf4j logging for admin actions
+- [x] Add service methods (AC: #5, #9)
+  - [x] approveListing(Long id) - update status to APPROVED
+  - [x] rejectListing(Long id, String reason) - update status to REJECTED with reason
+  - [x] Add @Slf4j logging for admin actions
 
-- [ ] Create admin review Thymeleaf template (AC: #1, #2)
-  - [ ] Create templates/admin/review.html
-  - [ ] Display listing cards with all required fields
-  - [ ] Add Approve button (green)
-  - [ ] Add Reject button (red) + reason text input
-  - [ ] Use card layout for each listing
+- [x] Create admin review Thymeleaf template (AC: #1, #2)
+  - [x] Create templates/admin/review.html
+  - [x] Display listing cards with all required fields
+  - [x] Add Approve button (green)
+  - [x] Add Reject button (red) + reason text input
+  - [x] Use card layout for each listing
 
-- [ ] Add access control (AC: #3, #4)
-  - [ ] Use @PreAuthorize("hasRole('ADMIN')") on controller methods
-  - [ ] OR configure SecurityConfig for /admin/** paths
-  - [ ] Return 403 or redirect if not ADMIN
+- [x] Add access control (AC: #3, #4)
+  - [x] Use @PreAuthorize("hasRole('ADMIN')") on controller methods
+  - [x] OR configure SecurityConfig for /admin/** paths
+  - [x] Return 403 or redirect if not ADMIN
 
-- [ ] Handle empty state (AC: #11)
-  - [ ] Check if listings list is empty
-  - [ ] Display "Không có listing nào chờ duyệt"
-  - [ ] Keep page layout consistent
+- [x] Handle empty state (AC: #11)
+  - [x] Check if listings list is empty
+  - [x] Display "Không có listing nào chờ duyệt"
+  - [x] Keep page layout consistent
 
 ## Dev Notes
 
@@ -727,6 +727,34 @@ claude-opus-4-5-20251101 (glm-4.6)
 - User confirmed: Vietnamese messages
 - This story MUST be completed before Story 2.2 (Browse Listings)
 
+**Implementation Summary (2026-01-19):**
+- Created AdminController with @PreAuthorize("hasRole('ADMIN') for security
+- Implemented GET /admin/review endpoint to show pending listings in FIFO order
+- Implemented POST /admin/review/{id}/approve endpoint for approving listings
+- Implemented POST /admin/review/{id}/reject endpoint for rejecting listings with reason
+- Added findPendingListings() method to GameAccountService (returns AdminListingDto with seller username)
+- Added approveListing(Long id) and rejectListing(Long id, String reason) to GameAccountService
+- Added @Slf4j logging for all admin actions
+- Created templates/admin/review.html with card-based layout
+- Approve button (green) and Reject button (red) with reason text input
+- Empty state displays "Không có listing nào chờ duyệt"
+- Enabled @EnableMethodSecurity in SecurityConfig
+- Added /admin/** security rule requiring ADMIN role
+- Added /listings/** public access rule for listing detail pages
+- Added "Admin Review" link to header for ADMIN users
+- Repository method findByStatusOrderByCreatedAtAsc already existed from Story 2.2
+- All 80 tests passing (including 9 AdminController tests, 8 admin service tests)
+- Access control: ADMIN role required via @PreAuthorize and SecurityConfig
+
+**Code Review Fixes Applied (2026-01-19):**
+- Created AdminListingDto to include seller username instead of just seller ID
+- Updated findPendingListings() to return AdminListingDto with seller username lookup
+- Updated review.html template to display seller username (not seller ID)
+- Added explicit CSRF tokens to both approve and reject forms
+- Added validation for empty reason parameter in controller
+- Updated story file documentation to reflect actual files created/modified
+- Documented MockMvc standaloneSetup limitation for security testing
+
 ### User Interview Summary
 
 **Questions Asked & Answers:**
@@ -747,18 +775,18 @@ claude-opus-4-5-20251101 (glm-4.6)
 | Path | Description |
 |------|-------------|
 | `src/main/java/com/gameaccountshop/controller/AdminController.java` | Admin controller with review endpoints |
+| `src/main/java/com/gameaccountshop/dto/AdminListingDto.java` | DTO for admin listings with seller username |
 | `src/main/resources/templates/admin/review.html` | Admin review page template |
 | `src/test/java/com/gameaccountshop/controller/AdminControllerTest.java` | Admin controller tests |
-| `src/test/java/com/gameaccountshop/service/GameAccountServiceAdminTest.java` | Admin service tests |
 
 ### Files to Modify
 
 | Path | Changes |
 |------|---------|
-| `src/main/java/com/gameaccountshop/service/GameAccountService.java` | Add approve/reject methods |
-| `src/main/java/com/gameaccountshop/repository/GameAccountRepository.java` | Add findByStatusOrderByCreatedAtAsc |
-| `src/main/java/com/gameaccountshop/config/SecurityConfig.java` | Add /admin/** security rules |
+| `src/main/java/com/gameaccountshop/service/GameAccountService.java` | Add findPendingListings(), approveListing(), rejectListing() methods |
+| `src/main/java/com/gameaccountshop/config/SecurityConfig.java` | Add @EnableMethodSecurity, /admin/** security rules |
 | `src/main/resources/templates/layout/header.html` | Add "Admin Review" link for ADMIN users |
+| `src/test/java/com/gameaccountshop/service/GameAccountServiceTest.java` | Add tests for admin service methods |
 
 ### Dependencies
 

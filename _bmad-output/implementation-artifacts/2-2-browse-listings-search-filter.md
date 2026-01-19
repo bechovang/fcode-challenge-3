@@ -1,6 +1,6 @@
 # Story 2.2: Browse Listings with Search/Filter
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
