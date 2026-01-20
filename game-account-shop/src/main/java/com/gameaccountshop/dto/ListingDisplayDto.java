@@ -12,6 +12,7 @@ public class ListingDisplayDto {
     private String accountRank;
     private Long price;
     private String description;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private String sellerUsername;
 
@@ -21,13 +22,14 @@ public class ListingDisplayDto {
 
     // Full constructor for JPA @Query projection
     public ListingDisplayDto(Long id, String gameName, String accountRank,
-                             Long price, String description, LocalDateTime createdAt,
+                             Long price, String description, String imageUrl, LocalDateTime createdAt,
                              String sellerUsername) {
         this.id = id;
         this.gameName = gameName;
         this.accountRank = accountRank;
         this.price = price;
         this.description = description;
+        this.imageUrl = imageUrl;
         this.createdAt = createdAt;
         this.sellerUsername = sellerUsername;
     }
@@ -71,6 +73,14 @@ public class ListingDisplayDto {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

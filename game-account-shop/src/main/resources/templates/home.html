@@ -83,6 +83,15 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
+    .listing-card .thumbnail {
+      width: 100%;
+      max-width: 200px;
+      height: auto;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+
     .listing-card .game-name {
       color: #2c3e50;
       font-size: 18px;
@@ -185,6 +194,12 @@
     <!-- Listings Grid: 3 columns, responsive to 1 on mobile -->
     <div th:if="${listings != null and !listings.empty}" class="listings-grid">
       <div th:each="listing : ${listings}" class="listing-card">
+        <!-- Image Thumbnail (downscaled via CSS) -->
+        <img th:if="${listing.imageUrl}"
+             th:src="${listing.imageUrl}"
+             alt="Account image"
+             class="thumbnail" />
+
         <!-- Game Name: Always "Liên Minh Huyền Thoại" for LoL-only MVP -->
         <div class="game-name" th:text="${listing.gameName}">Liên Minh Huyền Thoại</div>
 

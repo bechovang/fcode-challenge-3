@@ -16,6 +16,7 @@ So that **I can decide if I want to purchase it**.
 **When** I click "Xem chi tiết" on a listing card
 **Then** I am redirected to the listing detail page at `/listings/{id}`
 **And** I see all listing information:
+  - Full-size image
   - Game Name: "Liên Minh Huyền Thoại"
   - Account Rank: e.g., "Gold III", "Diamond II"
   - Price formatted: "500.000 VNĐ"
@@ -58,7 +59,7 @@ So that **I can decide if I want to purchase it**.
 ## Tasks / Subtasks
 
 - [x] Create ListingDetailDto with all detail fields (AC: #1)
-  - [x] Add fields: id, gameName, accountRank, price, description, status, createdAt, soldAt
+  - [x] Add fields: id, gameName, accountRank, price, description, imageUrl, status, createdAt, soldAt
   - [x] Add seller info: sellerId, sellerUsername, sellerEmail
 
 - [x] Add findByIdWithSeller method to repository (AC: #1)
@@ -395,6 +396,7 @@ public class ListingDetailDto {
     private String accountRank;
     private Long price;
     private String description;
+    private String imageUrl; // Image URL from ImgBB
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime soldAt;
@@ -410,7 +412,7 @@ public class ListingDetailDto {
 
     // Full constructor for JPA @Query projection
     public ListingDetailDto(Long id, String gameName, String accountRank,
-                             Long price, String description, String status,
+                             Long price, String description, String imageUrl, String status,
                              LocalDateTime createdAt, LocalDateTime soldAt,
                              Long sellerId, String sellerUsername, String sellerEmail) {
         this.id = id;
@@ -418,6 +420,7 @@ public class ListingDetailDto {
         this.accountRank = accountRank;
         this.price = price;
         this.description = description;
+        this.imageUrl = imageUrl;
         this.status = status;
         this.createdAt = createdAt;
         this.soldAt = soldAt;
@@ -441,6 +444,9 @@ public class ListingDetailDto {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -476,7 +482,7 @@ public class ListingDetailDto {
  * Find a specific listing by ID with seller information
  * Only returns APPROVED or SOLD listings
  * @Query("SELECT new com.gameaccountshop.dto.ListingDetailDto(" +
-       "g.id, g.gameName, g.accountRank, g.price, g.description, " +
+       "g.id, g.gameName, g.accountRank, g.price, g.description, g.imageUrl, " +
        "g.status, g.createdAt, g.soldAt, " +
        "u.id, u.username, u.email) " +
        "FROM GameAccount g " +
@@ -576,6 +582,15 @@ public class ListingController {
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
+    .detail-image {
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
     .status-badge {
       display: inline-block;
       padding: 6px 12px;
@@ -665,6 +680,12 @@ public class ListingController {
 
   <div class="content">
     <div class="detail-card">
+      <!-- Full-size Image -->
+      <img th:if="${listing.imageUrl}"
+           th:src="${listing.imageUrl}"
+           alt="Listing image"
+           class="detail-image" />
+
       <!-- Status Badge -->
       <div>
         <span class="status-badge"

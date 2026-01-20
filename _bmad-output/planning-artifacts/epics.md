@@ -20,10 +20,10 @@ This document provides the **simplified newbie MVP** epic and story breakdown fo
 | Feature | Stories | Complexity |
 |---------|---------|------------|
 | Basic Authentication | 3 | Easy |
-| Listings & Ratings | 5 | Easy-Medium |
-| Simple Buying with VNPay | 3 | Medium |
+| Listings & Ratings | 7 | Easy-Medium |
+| Simple Buying with VietQR + Email | 2 | Medium |
 | Dashboard & Profiles | 3 | Easy-Medium |
-| **Total** | **14** | **Newbie-Friendly** |
+| **Total** | **15** | **Newbie-Friendly** |
 
 ## Epic List
 
@@ -31,10 +31,10 @@ This document provides the **simplified newbie MVP** epic and story breakdown fo
 Establish the foundation - user accounts and secure access. Every feature depends on this.
 
 ### Epic 2: Listings & Ratings
-The core marketplace - sellers list accounts, buyers browse with search/filter, ratings build trust.
+The core marketplace - sellers list accounts with images and credentials, buyers browse with search/filter, ratings build trust. Email notifications for listing approvals/rejections.
 
 ### Epic 3: Simple Buying
-Complete the transaction flow with VNPay QR code payment and Gmail credential delivery.
+Complete the transaction flow with VietQR dynamic payment QR codes and automated credential delivery via email. Buyers receive notifications for payment approvals/rejections.
 
 ### Epic 4: Dashboard & Profiles
 Give sellers a profile page and admins platform oversight.
@@ -140,24 +140,27 @@ Enable sellers to create game account listings and buyers to discover them throu
 ### Story 2.1: Create Listing (Simplified)
 
 As a **logged-in user (seller)**,
-I want **to create a new game account listing**,
-So that **buyers can see my account for sale**.
+I want **to create a new game account listing with credentials**,
+So that **buyers can see my account for sale and admin can deliver credentials after purchase**.
 
 **Acceptance Criteria:**
 
 **Given** I am logged in as a USER
 **When** I access the create listing page
-**Then** I see a simplified form with fields:
+**Then** I see a form with fields:
   - Game Name (text input - e.g., "Liên Minh Huyền Thoại", "Valorant")
   - Rank/Level (text input - e.g., "Gold", "Diamond")
   - Price (number in VNĐ)
   - Description (textarea)
+  - Account Username (text input - the game account username buyer will receive)
+  - Account Password (text input - the game account password buyer will receive)
 
 **Given** I fill in all required fields with valid data
 **When** I submit the listing
 **Then** a new GameAccount is created in the database
 **And** the status is set to "PENDING"
 **And** seller_id is set to my user ID
+**And** account_username and account_password are stored securely
 **And** created_at timestamp is set
 **And** a success message "Đăng bán thành công! Chờ admin duyệt." is displayed
 **And** I am redirected to the home page
@@ -170,6 +173,11 @@ So that **buyers can see my account for sale**.
 **Given** I enter a price less than or equal to 0
 **When** I attempt to submit
 **Then** an error message "Giá bán phải lớn hơn 0" is displayed
+
+**Technical Notes:**
+- account_username and account_password are stored in game_accounts table
+- These credentials will be auto-emailed to buyer after payment approval (Story 3.2)
+- Password should be masked in UI (input type="password")
 
 ---
 
@@ -185,6 +193,7 @@ So that **I can find accounts I want to buy**.
 **When** the page loads
 **Then** I see all listings with status = "APPROVED"
 **And** each listing card displays:
+  - Image thumbnail (downscaled from uploaded image)
   - Game Name
   - Rank/Level
   - Price
@@ -223,6 +232,7 @@ So that **I can decide if I want to purchase it**.
 **When** I click on a listing
 **Then** I am redirected to the listing detail page
 **And** I see all listing information:
+  - Full-size image
   - Game Name
   - Rank/Level
   - Price
@@ -324,15 +334,110 @@ So that **buyers know it's no longer available**.
 
 ---
 
+### Story 2.6: Image Upload for Listing
+
+As a **seller creating a listing**,
+I want **to upload an image showcasing the game account**,
+So that **buyers can see visual proof of the account quality**.
+
+**Acceptance Criteria:**
+
+**Given** I am on the create listing page
+**When** I view the form
+**Then** I see an image upload field
+**And** the field accepts image files (JPG, PNG)
+**And** there is a preview area to show the uploaded image
+
+**Given** I select an image file and submit the form
+**When** the upload completes
+**Then** the image is uploaded to ImgBB via API
+**And** the image URL is stored in game_accounts.image_url
+**And** a thumbnail is generated for the listing card
+**And** the full-size image is available on the detail page
+
+**Given** I do not upload an image
+**When** I attempt to submit the form
+**Then** an error message "Vui lòng tải lên ảnh minh họa" is displayed
+**And** no listing is created
+
+**Technical Notes:**
+- ImgBB API: `POST https://api.imgbb.com/1/upload`
+- API Key from application.yml: `imgbb.api-key`
+- Convert image to Base64 before uploading
+- Store returned URL in database
+- Thumbnail: Use CSS to downscale image on listing cards (max-width: 200px)
+- Max file size: 32MB (ImgBB limit)
+- Form: `<input type="file" name="image" accept="image/*" required/>`
+
+**application.yml configuration:**
+```yaml
+imgbb:
+  api-key: 326b60d80445ca87cc53be21178a4c62
+```
+
+---
+
+### Story 2.7: Listing Email Notifications
+
+As a **seller**,
+I want **to receive email notifications when my listing is approved or rejected**,
+So that **I know the status of my listing without checking the website**.
+
+**Acceptance Criteria:**
+
+**Given** I am a seller who created a listing
+**When** an admin approves my listing
+**Then** I receive an email with subject "✅ Listing của bạn đã được duyệt!"
+**And** the email contains:
+  - Game name
+  - Rank
+  - Price
+  - A message that my listing is now visible on the homepage
+  - Link to view the listing
+
+**Given** I am a seller who created a listing
+**When** an admin rejects my listing
+**Then** I receive an email with subject "❌ Listing của bạn đã bị từ chối"
+**And** the email contains:
+  - Game name
+  - Rank
+  - Price
+  - The rejection reason
+  - A message to fix and resubmit
+  - Contact info for support
+
+**Given** the email fails to send
+**When** the admin approves or rejects a listing
+**Then** an error message is displayed on the admin dashboard
+**And** the admin is notified that the email was not delivered
+**And** the listing status is still updated (email failure doesn't block the action)
+
+**Technical Notes:**
+- Use JavaMail API with Gmail SMTP
+- Email config in application.yml:
+  ```yaml
+  spring.mail.host: smtp.gmail.com
+  spring.mail.port: 587
+  spring.mail.username: your-email@gmail.com
+  spring.mail.password: xxxx-xxxx-xxxx-xxxx
+  spring.mail.properties.mail.smtp.auth: true
+  spring.mail.properties.mail.smtp.starttls.enable: true
+  ```
+- Send emails asynchronously to avoid blocking the approval/rejection action
+- Handle email exceptions gracefully (log error, show dashboard notification)
+- HTML email templates for better formatting
+
+---
+
 ## Epic 3: Simple Buying
 
-Enable buyers to purchase game accounts using VNPay QR code for payment. Admin manually verifies and sends credentials via Gmail.
+Enable buyers to purchase game accounts using VietQR payment with dynamic QR codes. Admin verifies payments and automatically sends account credentials via email. Buyers and sellers receive email notifications for all transaction status changes.
 
-### Story 3.1: Buyer Click "Buy"
+### Story 3.1: Buy Now & Show VietQR Payment
 
 As a **logged-in buyer**,
-I want **to click "Buy Now" to initiate purchase**,
-So that **I can proceed to payment**.
+I want **to click "Buy Now" and see a QR code with exact payment amount and description**,
+So that **I can easily pay using my banking app**.
 
 **Acceptance Criteria:**
 
@@ -347,6 +452,29 @@ So that **I can proceed to payment**.
 **And** commission (10%) is calculated
 **And** I am redirected to the payment page
 
+**Given** I reach the payment page
+**When** the page loads
+**Then** I see the payment details:
+  - Listing price (e.g., 500,000 VNĐ)
+  - Platform fee 10% (e.g., 50,000 VNĐ)
+  - Total amount (e.g., 550,000 VNĐ)
+  - Transaction ID
+
+**And** I see a QR code image generated from VietQR.net
+**And** the QR code contains:
+  - Bank account (from application.yml config)
+  - Exact total amount
+  - Transfer description (transaction ID)
+
+**And** I see payment instructions:
+  - "Mở ứng dụng ngân hàng của bạn"
+  - "Quét mã QR bên dưới"
+  - "Hoặc chuyển khoản đến: [bank account]"
+  - "Số tiền: [total amount] VNĐ"
+  - "Nội dung: [transaction ID]"
+
+**And** I see a message "Sau khi thanh toán, admin sẽ xác nhận và gửi thông tin tài khoản qua email"
+
 **Given** the listing status is not "APPROVED"
 **When** I view the listing
 **Then** the "Mua ngay" button is not available
@@ -358,50 +486,31 @@ So that **I can proceed to payment**.
 **Technical Notes:**
 - Transaction table: id, listing_id, buyer_id, seller_id, amount, commission, status, created_at
 - Commission = amount * 0.10
-- Status flow: PENDING → VERIFIED → COMPLETED
-
----
-
-### Story 3.2: Show VNPay QR Code
-
-As a **buyer**,
-I want **to see a VNPay QR code and payment instructions**,
-So that **I can pay using my phone**.
-
-**Acceptance Criteria:**
-
-**Given** I have initiated a purchase
-**When** I reach the payment page
-**Then** I see the payment details:
-  - Listing price (e.g., 500,000 VNĐ)
-  - Platform fee 10% (e.g., 50,000 VNĐ)
-  - Total amount (e.g., 550,000 VNĐ)
-  - Transaction ID
-
-**And** I see a QR code image
-**And** I see payment instructions:
-  - "Mở ứng dụng VNPay"
-  - "Quét mã QR bên dưới"
-  - "Nhập số tiền: [total amount]"
-  - "Nội dung: [transaction ID]"
-
-**And** I see a message "Sau khi thanh toán, admin sẽ xác nhận và gửi thông tin tài khoản qua email"
-
-**And** I see a "Tôi đã thanh toán" button to notify admin
-
-**Technical Notes:**
-- For MVP: Use a static/sample QR code image
-- No VNPay API integration needed yet
-- Display QR code as `<img>` tag with static image or use a QR code library
+- Status flow: PENDING → VERIFIED → REJECTED
+- VietQR.net URL format: `https://img.vietqr.io/image/{bankId}-{accountNo}-compact.png?amount={amount}&addInfo={description}`
+- URL encode the description parameter
 - Store transaction ID in session for reference
 
+**application.yml configuration:**
+```yaml
+vietqr:
+  bank-id: 970415
+  account-no: 113366668888
+  account-name: Your Name
+```
+
+**Example QR URL:**
+```
+https://img.vietqr.io/image/970415-113366668888-compact.png?amount=550000&addInfo=TXN123456
+```
+
 ---
 
-### Story 3.3: Admin Verify & Send to Gmail
+### Story 3.2: Admin Approve/Reject Transaction & Send Emails
 
 As an **admin**,
-I want **to verify payment and send account credentials to buyer's email**,
-So that **the buyer receives their purchase securely**.
+I want **to approve or reject payments and automatically send appropriate emails**,
+So that **buyers receive their credentials or rejection reasons promptly**.
 
 **Acceptance Criteria:**
 
@@ -410,45 +519,97 @@ So that **the buyer receives their purchase securely**.
 **Then** I see all transactions with status = "PENDING"
 **And** each transaction displays:
   - Transaction ID
-  - Listing info (Game Name, Rank)
+  - Listing info (Game Name, Rank, Image)
   - Buyer username and email
   - Seller username
   - Amount
   - Created Date
-**And** I see a "Verify & Send" button for each transaction
+**And** I see an "Approve & Send Credentials" button for each transaction
+**And** I see a "Reject" button with reason input for each transaction
 
-**Given** I have verified the payment in VNPay dashboard/banking app
-**When** I click "Verify & Send" for a transaction
-**Then** I am prompted to enter the account credentials:
-  - Username
-  - Password
-  - Additional notes (optional)
-
-**Given** I enter the credentials and submit
-**When** the process completes
+**Given** I click "Approve & Send Credentials" for a transaction
+**When** the approval completes
 **Then** the transaction status is updated to "VERIFIED"
 **And** the listing status is updated to "SOLD"
 **And** sold_at timestamp is set
-**And** the credentials are sent to buyer's email via Gmail/SMTP
+**And** the account credentials (from game_accounts table) are automatically sent to buyer's email
 **And** the email contains:
   - Account username
   - Account password
   - Warning to change password immediately
-  - Transaction details
+  - Transaction details (Game Name, Rank, Amount)
 **And** a success message "Đã xác nhận và gửi thông tin qua email" is displayed
 
+**Given** I click "Reject" and enter a reason
+**When** the rejection completes
+**Then** the transaction status is updated to "REJECTED"
+**And** the rejection reason is stored
+**And** a rejection email is sent to the buyer
+**And** the rejection email contains:
+  - Transaction ID
+  - Amount
+  - Rejection reason
+  - Contact info for support
+**And** a success message "Đã từ chối giao dịch" is displayed
+
+**Given** the email fails to send
+**When** the admin approves or rejects a transaction
+**Then** an error message is displayed on the admin dashboard
+**And** the admin is notified that the email was not delivered
+**And** the transaction status is still updated (email failure doesn't block the action)
+
+**Given** there are no pending transactions
+**When** I navigate to the admin verification page
+**Then** a message "Không có giao dịch nào chờ xác nhận" is displayed
+
 **Technical Notes:**
-- Use JavaMail API with SMTP (Gmail or other provider)
+- Credentials are retrieved from game_accounts.account_username and game_accounts.account_password
+- Use JavaMail API with Gmail SMTP
 - Email config in application.yml:
   ```yaml
-  spring.mail.host=smtp.gmail.com
-  spring.mail.port=587
-  spring.mail.username=your-email@gmail.com
-  spring.mail.password=your-app-password
-  spring.mail.properties.mail.smtp.auth=true
-  spring.mail.properties.mail.smtp.starttls.enable=true
+  spring.mail.host: smtp.gmail.com
+  spring.mail.port: 587
+  spring.mail.username: your-email@gmail.com
+  spring.mail.password: xxxx-xxxx-xxxx-xxxx
+  spring.mail.properties.mail.smtp.auth: true
+  spring.mail.properties.mail.smtp.starttls.enable: true
   ```
-- For testing: Use Gmail App Password or a test SMTP service like Mailtrap
+- Send emails asynchronously to avoid blocking the approval/rejection action
+- Handle email exceptions gracefully (log error, show dashboard notification)
+- HTML email templates for better formatting
+
+**Email Template - Payment Approved:**
+```
+Subject: 🎉 Thanh toán thành công! Đây là thông tin tài khoản
+
+Cảm ơn bạn đã mua hàng!
+
+Thông tin tài khoản game:
+- Username: [Account Username]
+- Password: [Account Password]
+
+⚠️ QUAN TRỌNG: Đổi mật khẩu ngay sau khi đăng nhập!
+
+Chi tiết giao dịch:
+- Game: [Game Name]
+- Rank: [Rank]
+- Mã giao dịch: [Transaction ID]
+- Số tiền: [Amount]
+```
+
+**Email Template - Payment Rejected:**
+```
+Subject: ❌ Giao dịch của bạn đã bị từ chối
+
+Rất tiếc, giao dịch của bạn đã bị từ chối:
+
+- Mã giao dịch: [Transaction ID]
+- Số tiền: [Amount]
+
+Lý do: [Rejection Reason]
+
+Nếu bạn nghĩ đây là sự nhầm lẫn, vui lòng liên hệ admin kèm ảnh chụp thanh toán.
+```
 
 ---
 

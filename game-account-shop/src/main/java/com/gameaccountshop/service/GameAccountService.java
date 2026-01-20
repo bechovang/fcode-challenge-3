@@ -140,6 +140,7 @@ public class GameAccountService {
                         ga.getAccountRank(),
                         ga.getPrice(),
                         ga.getDescription(),
+                        ga.getImageUrl(),
                         ga.getCreatedAt(),
                         sellerUsernameMap.getOrDefault(ga.getSellerId(), "Unknown")
                 ))
