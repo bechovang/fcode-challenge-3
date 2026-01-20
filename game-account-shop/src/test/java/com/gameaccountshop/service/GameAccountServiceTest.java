@@ -15,7 +15,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,9 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +36,9 @@ class GameAccountServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ImageUploadService imageUploadService;
 
     @InjectMocks
     private GameAccountService gameAccountService;
@@ -67,8 +70,12 @@ class GameAccountServiceTest {
     }
 
     @Test
-    void createListing_ValidDto_ReturnsSavedEntity() {
+    void createListing_ValidDto_ReturnsSavedEntity() throws IOException {
         // Given
+        MultipartFile mockImage = mock(MultipartFile.class);
+        when(mockImage.isEmpty()).thenReturn(false);
+        testDto.setImage(mockImage);
+        when(imageUploadService.uploadImage(any(MultipartFile.class))).thenReturn("https://example.com/image.jpg");
         when(gameAccountRepository.save(any(GameAccount.class))).thenReturn(testEntity);
 
         // When
@@ -86,8 +93,12 @@ class GameAccountServiceTest {
     }
 
     @Test
-    void createListing_SetsPendingStatus() {
+    void createListing_SetsPendingStatus() throws IOException {
         // Given
+        MultipartFile mockImage = mock(MultipartFile.class);
+        when(mockImage.isEmpty()).thenReturn(false);
+        testDto.setImage(mockImage);
+        when(imageUploadService.uploadImage(any(MultipartFile.class))).thenReturn("https://example.com/image.jpg");
         when(gameAccountRepository.save(any(GameAccount.class))).thenReturn(testEntity);
 
         // When
@@ -98,9 +109,13 @@ class GameAccountServiceTest {
     }
 
     @Test
-    void createListing_SetsSellerId() {
+    void createListing_SetsSellerId() throws IOException {
         // Given
         Long sellerId = 123L;
+        MultipartFile mockImage = mock(MultipartFile.class);
+        when(mockImage.isEmpty()).thenReturn(false);
+        testDto.setImage(mockImage);
+        when(imageUploadService.uploadImage(any(MultipartFile.class))).thenReturn("https://example.com/image.jpg");
         // Use Answer to return the saved entity with the sellerId set
         when(gameAccountRepository.save(any(GameAccount.class))).thenAnswer(invocation -> {
             GameAccount saved = invocation.getArgument(0);

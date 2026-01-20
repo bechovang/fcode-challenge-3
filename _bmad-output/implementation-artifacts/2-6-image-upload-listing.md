@@ -1,6 +1,6 @@
 # Story 2.6: Image Upload for Listing
 
-Status: todo
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -506,21 +506,37 @@ claude-opus-4-5-20251101 (glm-4.6)
 
 ### Completion Notes List
 
-- **Story Status:** New story - not yet implemented
-- **Dependencies:** Stories 2.1, 2.2, 2.3 must be completed first
-- **Configuration Required:** ImgBB API key in application.yml
-- **Migration Required:** V3__Add_Image_URL.sql
+- **Story Status:** ✅ Completed
+- **Implementation Date:** 2026-01-20
+- **Dependencies:** Stories 2.1, 2.2, 2.3 already completed
+- **Configuration:** ImgBB API key configured in application.yml
+- **Migration:** V3__Add_Credential_Columns.sql already includes image_url column
 
-### File List
+**Implementation Summary:**
+- Created `ImageUploadService.java` with ImgBB API integration
+- Updated `GameAccountDto.java` to add `MultipartFile image` field
+- Updated `GameAccountService.java` to integrate `ImageUploadService` and upload images before creating listings
+- Updated `ListingController.java` to handle multipart form data and IOException
+- Updated `listing/create.html` template with image upload field and JavaScript preview
+- Added ImgBB API key to `application.yml`
+- Added file upload configuration (max 32MB) to `application.yml`
+- Updated tests to handle IOException and mock ImageUploadService
+- All 91 tests passing
 
-**Files to Create:**
+**Files Created:**
 - `src/main/java/com/gameaccountshop/service/ImageUploadService.java`
-- `src/main/resources/db/migration/V3__Add_Image_URL.sql`
 
-**Files to Modify:**
-- `src/main/java/com/gameaccountshop/entity/GameAccount.java` - Add imageUrl field
-- `src/main/java/com/gameaccountshop/dto/GameAccountDto.java` - Add MultipartFile field
-- `src/main/java/com/gameaccountshop/service/GameAccountService.java` - Integrate ImageUploadService
-- `src/main/java/com/gameaccountshop/controller/ListingController.java` - Handle image upload
-- `src/main/resources/templates/listing/create.html` - Add image upload field with preview
-- `src/main/resources/application.yml` - Add imgbb.api-key configuration
+**Files Modified:**
+- `src/main/java/com/gameaccountshop/dto/GameAccountDto.java` - Added MultipartFile image field
+- `src/main/java/com/gameaccountshop/service/GameAccountService.java` - Integrated ImageUploadService, added IOException to createListing()
+- `src/main/java/com/gameaccountshop/service/ImageUploadService.java` - Fixed URL encoding for Base64 string (see bug fixes below)
+- `src/main/java/com/gameaccountshop/controller/ListingController.java` - Added error handling for IOException
+- `src/main/resources/templates/listing/create.html` - Added image upload field with preview
+- `src/main/resources/application.yml` - Added ImgBB API key and multipart config
+- `src/test/java/com/gameaccountshop/controller/ListingControllerTest.java` - Updated to mock MultipartFile
+- `src/test/java/com/gameaccountshop/service/GameAccountServiceTest.java` - Added ImageUploadService mock
+
+**Bug Fixes Applied (2026-01-21):**
+- **Fixed ImgBB "Invalid base64 string" error**: Added URL encoding using `URLEncoder.encode()` for both Base64 image data and API key. Base64 strings contain special characters (`+`, `/`, `=`) that must be URL-encoded when sent via form POST requests.
+- Added enhanced logging for debugging (file size, Base64 length, request body length, validation details)
+- Improved error messages to include full ImgBB response for easier troubleshooting

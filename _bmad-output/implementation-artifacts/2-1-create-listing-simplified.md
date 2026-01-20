@@ -796,3 +796,80 @@ All issues from the earlier adversarial code review were automatically fixed:
 | 7 | No custom exceptions | ✅ Created ResourceNotFoundException and BusinessException classes |
 | 9 | Error message inconsistency | ✅ Added .error CSS class and Vietnamese fallback message in home.html |
 | - | No error page template | ✅ Created error.html template for consistent error display |
+
+---
+
+## Bug Fixes Applied (2026-01-21)
+
+### Security Bug Fix: Unauthorized Access to Create Listing Page
+
+**Issue:** Anonymous users (not logged in) could access the create listing page at `/listings/create` despite security configuration requiring `ROLE_USER`.
+
+**Root Cause:** Path mismatch between:
+- **Controller:** `@RequestMapping("/listings")` + `@GetMapping("/create")` → `/listings/create` (plural)
+- **SecurityConfig:** `.requestMatchers("/listing/create")` (singular)
+
+The mismatch caused requests to fall through to the broader `/listings/**` rule which had `permitAll()`.
+
+**Fix Applied:**
+- Updated `SecurityConfig.java:55-56` to use `/listings/create` (correct path)
+- Moved `/listings/create` rule **before** `/listings/**` (order matters in Spring Security)
+
+**Files Modified:**
+- `src/main/java/com/gameaccountshop/config/SecurityConfig.java`
+
+### Database Configuration Improvements
+
+**Issue:** Potential transaction persistence issues across application restarts.
+
+**Fix Applied:**
+- Added explicit HikariCP connection pool settings with `auto-commit: true`
+- Added MySQL connection parameters (`serverTimezone=UTC`, `allowPublicKeyRetrieval=true`)
+- Added Hibernate JDBC batch optimization settings
+
+**Files Modified:**
+- `src/main/resources/application.yml`
+
+**Configuration Changes:**
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/gameaccountshop?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    hikari:
+      auto-commit: true
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+```
+
+---
+
+## Session Revocation Filter Implementation (2026-01-21)
+
+**Feature:** Global session revocation mechanism to handle deleted/banned users.
+
+**Purpose:** Check if authenticated users still exist in the database on every request. If a user is deleted or banned while logged in, their session is immediately invalidated.
+
+**Implementation:**
+- Created `SessionRevocationFilter.java` extending `OncePerRequestFilter`
+- Registered filter in `SecurityConfig.java` before `UsernamePasswordAuthenticationFilter`
+- Filter checks `userRepository.existsByUsername()` for authenticated users
+- If user not found: clears SecurityContext, invalidates HTTP session, redirects to `/auth/login?expired`
+
+**Files Created:**
+- `src/main/java/com/gameaccountshop/security/SessionRevocationFilter.java`
+- `src/test/java/com/gameaccountshop/security/SessionRevocationFilterTest.java`
+
+**Test Coverage:** 4 test cases (user exists, user not exists, no authentication, anonymous user)
+
+**Files Modified:**
+- `src/main/java/com/gameaccountshop/config/SecurityConfig.java` - Added sessionRevocationFilter() bean and filter registration
+
+**Test Results:** All 95 tests passing

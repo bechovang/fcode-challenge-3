@@ -4,7 +4,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * DTO for creating a new game account listing
+ * Story 2.1: Create Listing (base fields)
+ * Story 2.6: Image Upload for Listing (image field)
+ */
 public class GameAccountDto {
 
     @NotBlank(message = "Vui lòng nhập rank")
@@ -27,6 +33,9 @@ public class GameAccountDto {
     @Size(max = 100, message = "Mật khẩu không được vượt quá 100 ký tự")
     private String accountPassword;
 
+    // Story 2.6: Image Upload
+    private MultipartFile image;
+
     public String getAccountRank() { return accountRank; }
     public void setAccountRank(String accountRank) { this.accountRank = accountRank; }
 
@@ -41,4 +50,7 @@ public class GameAccountDto {
 
     public String getAccountPassword() { return accountPassword; }
     public void setAccountPassword(String accountPassword) { this.accountPassword = accountPassword; }
+
+    public MultipartFile getImage() { return image; }
+    public void setImage(MultipartFile image) { this.image = image; }
 }

@@ -39,6 +39,8 @@
 
     input[type="text"],
     input[type="number"],
+    input[type="password"],
+    input[type="file"],
     textarea {
       width: 100%;
       padding: 10px;
@@ -120,6 +122,50 @@
       color: #7f8c8d;
       margin-top: 3px;
     }
+
+    /* Story 2.6: Image Upload Styles */
+    .image-upload-container {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background: #fafafa;
+    }
+
+    .image-upload-container:hover {
+      border-color: #27ae60;
+      background: #f0f9f4;
+    }
+
+    #imagePreview {
+      display: none;
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    #previewImg {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .remove-image-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      width: auto;
+    }
+
+    .remove-image-btn:hover {
+      background: #c0392b;
+    }
   </style>
 </head>
 
@@ -139,7 +185,8 @@
       <span th:text="${errorMessage}">Error message here</span>
     </div>
 
-    <form th:action="@{/listings/create}" th:object="${gameAccountDto}" method="post">
+    <!-- Story 2.6: Add enctype for file upload -->
+    <form th:action="@{/listings/create}" th:object="${gameAccountDto}" method="post" enctype="multipart/form-data">
 
       <!-- Rank/Level Field -->
       <div class="form-group">
@@ -199,6 +246,27 @@
         <div class="help-text">Mật khẩu sẽ được lưu an toàn và chỉ gửi cho người mua sau khi thanh toán thành công</div>
       </div>
 
+      <!-- Story 2.6: Image Upload Field -->
+      <div class="form-group">
+        <label for="image">Ảnh minh họa *</label>
+        <div class="image-upload-container">
+          <input type="file"
+                 id="image"
+                 name="image"
+                 accept="image/*"
+                 required
+                 onchange="previewImage(event)" />
+          <div class="help-text">Định dạng: JPG, PNG, GIF, WebP. Tối đa: 32MB</div>
+        </div>
+
+        <!-- Image Preview -->
+        <div id="imagePreview">
+          <img id="previewImg" src="" alt="Preview" />
+          <br />
+          <button type="button" class="remove-image-btn" onclick="removeImage()">Xóa ảnh</button>
+        </div>
+      </div>
+
       <!-- Submit Button -->
       <button type="submit">Đăng bán ngay</button>
 
@@ -208,6 +276,47 @@
       <a th:href="@{/}">Quay lại trang chủ</a>
     </div>
   </div>
+
+  <!-- Story 2.6: Image Preview JavaScript -->
+  <script>
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert('Vui lòng chọn file ảnh (JPG, PNG, GIF, WebP)');
+          event.target.value = '';
+          document.getElementById('imagePreview').style.display = 'none';
+          return;
+        }
+
+        // Validate file size (32MB = 32 * 1024 * 1024 bytes)
+        const maxSize = 32 * 1024 * 1024;
+        if (file.size > maxSize) {
+          alert('Kích thước file quá lớn. Tối đa: 32MB');
+          event.target.value = '';
+          document.getElementById('imagePreview').style.display = 'none';
+          return;
+        }
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('previewImg').src = e.target.result;
+          document.getElementById('imagePreview').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+      } else {
+        document.getElementById('imagePreview').style.display = 'none';
+      }
+    }
+
+    function removeImage() {
+      document.getElementById('image').value = '';
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('previewImg').src = '';
+    }
+  </script>
 
 </body>
 </html>

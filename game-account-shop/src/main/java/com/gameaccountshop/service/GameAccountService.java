@@ -14,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -33,15 +35,34 @@ public class GameAccountService {
 
     private final GameAccountRepository gameAccountRepository;
     private final UserRepository userRepository;
+    private final ImageUploadService imageUploadService;
 
-    public GameAccountService(GameAccountRepository gameAccountRepository, UserRepository userRepository) {
+    public GameAccountService(GameAccountRepository gameAccountRepository,
+                             UserRepository userRepository,
+                             ImageUploadService imageUploadService) {
         this.gameAccountRepository = gameAccountRepository;
         this.userRepository = userRepository;
+        this.imageUploadService = imageUploadService;
     }
 
+    /**
+     * Create a new listing with image upload
+     * Story 2.1: Create Listing
+     * Story 2.6: Image Upload for Listing
+     */
     @Transactional
-    public GameAccount createListing(GameAccountDto dto, Long sellerId) {
+    public GameAccount createListing(GameAccountDto dto, Long sellerId) throws IOException {
         log.info("Creating new listing: sellerId={}, rank={}, price={}", sellerId, dto.getAccountRank(), dto.getPrice());
+
+        // Story 2.6: Upload image first
+        String imageUrl = null;
+        MultipartFile imageFile = dto.getImage();
+        if (imageFile != null && !imageFile.isEmpty()) {
+            imageUrl = imageUploadService.uploadImage(imageFile);
+            log.info("Image uploaded successfully: {}", imageUrl);
+        } else {
+            throw new IllegalArgumentException("Vui lòng tải lên ảnh minh họa");
+        }
 
         GameAccount gameAccount = new GameAccount();
         // gameName is auto-set to "Liên Minh Huyền Thoại" in @PrePersist
@@ -50,11 +71,12 @@ public class GameAccountService {
         gameAccount.setDescription(dto.getDescription());
         gameAccount.setAccountUsername(dto.getAccountUsername());
         gameAccount.setAccountPassword(dto.getAccountPassword());
+        gameAccount.setImageUrl(imageUrl); // Story 2.6: Store image URL
         gameAccount.setSellerId(sellerId);
         gameAccount.setStatus(ListingStatus.PENDING);
 
         GameAccount saved = gameAccountRepository.save(gameAccount);
-        log.info("Listing created successfully: id={}, sellerId={}", saved.getId(), sellerId);
+        log.info("Listing created successfully: id={}, sellerId={}, imageUrl={}", saved.getId(), sellerId, imageUrl);
 
         return saved;
     }
