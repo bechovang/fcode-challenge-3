@@ -314,21 +314,49 @@ SELECT id, username, role FROM users;
 5. ✅ Flyway will create tables automatically on first run
 6. ✅ Default admin account created automatically
 
-### 3. Configure Database Connection
+### 3. Configure Application Settings
 
-Edit `game-account-shop/src/main/resources/application.yml`:
+**Step 3.1: Copy the example configuration file**
+
+```bash
+# Navigate to the resources directory
+cd game-account-shop/src/main/resources
+
+# Copy the example configuration
+cp application.yml.example application.yml
+```
+
+**Step 3.2: Edit application.yml with your settings**
+
+Open `game-account-shop/src/main/resources/application.yml` in a text editor and configure:
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/gameaccountshop
     username: root
-    password: your_password_here  # Change this!
+    password: YOUR_MYSQL_PASSWORD  # Change to your MySQL root password
+
+# ImgBB Image Upload API (optional - for image upload feature)
+imgbb:
+  api-key: YOUR_IMGBB_API_KEY  # Get free key from https://api.imgbb.com/
 ```
 
-**Current default credentials in application.yml:**
-- Username: `root`
-- Password: `password`
+**Configuration Options:**
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `spring.datasource.password` | MySQL root password | `YOUR_MYSQL_PASSWORD` |
+| `imgbb.api-key` | ImgBB API key for image upload | `YOUR_IMGBB_API_KEY` |
+
+**Getting an ImgBB API Key (optional):**
+
+1. Go to https://imgbb.com/
+2. Sign up for a free account
+3. Go to API Settings
+4. Copy your API key
+5. Paste it in `application.yml`
+
+**Note:** If you don't configure the ImgBB API key, the image upload feature will not work. You can add it later if needed.
 
 ### 4. Build and Run
 
