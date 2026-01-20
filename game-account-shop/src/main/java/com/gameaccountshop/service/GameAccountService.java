@@ -33,10 +33,12 @@ public class GameAccountService {
 
     private final GameAccountRepository gameAccountRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    public GameAccountService(GameAccountRepository gameAccountRepository, UserRepository userRepository) {
+    public GameAccountService(GameAccountRepository gameAccountRepository, UserRepository userRepository, EmailService emailService) {
         this.gameAccountRepository = gameAccountRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -241,6 +243,25 @@ public class GameAccountService {
         gameAccountRepository.save(listing);
 
         log.info("Admin approved listing: id={}", id);
+
+        // Send approval email (async and non-blocking)
+        try {
+            User seller = userRepository.findById(listing.getSellerId())
+                .orElseThrow(() -> new RuntimeException("Seller not found"));
+
+            // Assuming standard URL structure. In a real app, this should come from config or request.
+            String listingUrl = "http://localhost:8080/listings/" + id;
+
+            emailService.sendListingApprovedEmail(
+                seller.getEmail(),
+                listing.getGameName(),
+                listing.getAccountRank(),
+                listing.getPrice(),
+                listingUrl
+            );
+        } catch (Exception e) {
+            log.error("Failed to initiate approval email sending for listing: {}", id, e);
+        }
     }
 
     /**
@@ -272,6 +293,22 @@ public class GameAccountService {
         gameAccountRepository.save(listing);
 
         log.info("Admin rejected listing: id={}, reason={}", id, reason);
+
+        // Send rejection email (async and non-blocking)
+        try {
+            User seller = userRepository.findById(listing.getSellerId())
+                .orElseThrow(() -> new RuntimeException("Seller not found"));
+
+            emailService.sendListingRejectedEmail(
+                seller.getEmail(),
+                listing.getGameName(),
+                listing.getAccountRank(),
+                listing.getPrice(),
+                reason
+            );
+        } catch (Exception e) {
+            log.error("Failed to initiate rejection email sending for listing: {}", id, e);
+        }
     }
 
     /**
