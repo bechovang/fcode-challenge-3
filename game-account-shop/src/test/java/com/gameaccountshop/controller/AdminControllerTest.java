@@ -204,6 +204,40 @@ class AdminControllerTest {
         verify(gameAccountService, times(1)).rejectListing(eq(listingId), any());
     }
 
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void rejectListing_BlankReason_ReturnsErrorMessage() throws Exception {
+        // Given
+        Long listingId = 1L;
+
+        // When & Then - blank reason
+        mockMvc.perform(post("/admin/review/{id}/reject", listingId)
+                .with(csrf())
+                .param("reason", "   "))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/review"))
+                .andExpect(flash().attribute("errorMessage", "Lý do từ chối phải từ 2-500 ký tự"));
+
+        verify(gameAccountService, never()).rejectListing(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void rejectListing_SingleCharacterReason_ReturnsErrorMessage() throws Exception {
+        // Given
+        Long listingId = 1L;
+
+        // When & Then - single character reason (less than min length 2)
+        mockMvc.perform(post("/admin/review/{id}/reject", listingId)
+                .with(csrf())
+                .param("reason", "x"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/review"))
+                .andExpect(flash().attribute("errorMessage", "Lý do từ chối phải từ 2-500 ký tự"));
+
+        verify(gameAccountService, never()).rejectListing(any(), any());
+    }
+
     // ========================================================================
     // Access Control Tests (Non-ADMIN users)
     // ========================================================================
@@ -225,6 +259,7 @@ class AdminControllerTest {
     void reviewListings_AsUser_RequiresFullSpringContextForSecurityTest() throws Exception {
         // NOTE: This test documents that full security testing requires Spring context
         // With standaloneSetup, @PreAuthorize is not enforced
+        // Security is verified at runtime by Spring Security filter chain
         mockMvc.perform(get("/admin/review"))
                 .andExpect(status().isOk()); // Would be 403 with full SecurityFilterChain
     }

@@ -121,16 +121,7 @@ public class GameAccountService {
             return List.of();
         }
 
-        // Collect unique seller IDs
-        List<Long> sellerIds = gameAccounts.stream()
-                .map(GameAccount::getSellerId)
-                .distinct()
-                .toList();
-
-        // Fetch all users in one query
-        List<User> sellers = userRepository.findAllById(sellerIds);
-        Map<Long, String> sellerUsernameMap = sellers.stream()
-                .collect(Collectors.toMap(User::getId, User::getUsername));
+        Map<Long, String> sellerUsernameMap = buildSellerUsernameMap(gameAccounts);
 
         // Build DTOs
         return gameAccounts.stream()
@@ -145,6 +136,30 @@ public class GameAccountService {
                         sellerUsernameMap.getOrDefault(ga.getSellerId(), "Unknown")
                 ))
                 .toList();
+    }
+
+    /**
+     * Build a map of seller ID to username for the given game accounts
+     * Story 2.2, 2.4: Helper method to avoid duplicate seller username lookup code
+     *
+     * @param gameAccounts List of game accounts to build seller map for
+     * @return Map of seller ID to username
+     */
+    private Map<Long, String> buildSellerUsernameMap(List<GameAccount> gameAccounts) {
+        if (gameAccounts == null || gameAccounts.isEmpty()) {
+            return Map.of();
+        }
+
+        // Collect unique seller IDs
+        List<Long> sellerIds = gameAccounts.stream()
+                .map(GameAccount::getSellerId)
+                .distinct()
+                .toList();
+
+        // Fetch all users in one query
+        List<User> sellers = userRepository.findAllById(sellerIds);
+        return sellers.stream()
+                .collect(Collectors.toMap(User::getId, User::getUsername));
     }
 
     /**
@@ -176,21 +191,11 @@ public class GameAccountService {
         log.info("Finding pending listings for admin review");
         List<GameAccount> pendingListings = gameAccountRepository.findByStatusOrderByCreatedAtAsc(ListingStatus.PENDING);
 
-        // Build DTOs with seller username lookup
         if (pendingListings.isEmpty()) {
             return List.of();
         }
 
-        // Collect unique seller IDs
-        List<Long> sellerIds = pendingListings.stream()
-                .map(GameAccount::getSellerId)
-                .distinct()
-                .toList();
-
-        // Fetch all users in one query
-        List<User> sellers = userRepository.findAllById(sellerIds);
-        Map<Long, String> sellerUsernameMap = sellers.stream()
-                .collect(Collectors.toMap(User::getId, User::getUsername));
+        Map<Long, String> sellerUsernameMap = buildSellerUsernameMap(pendingListings);
 
         // Build AdminListingDto list
         return pendingListings.stream()
@@ -204,17 +209,6 @@ public class GameAccountService {
                         ga.getCreatedAt()
                 ))
                 .toList();
-    }
-
-    /**
-     * Find all pending listings as entities (for internal use)
-     * Story 2.4: Admin Approve/Reject Listings
-     *
-     * @return List of pending GameAccount entities ordered by created_at ASC
-     */
-    List<GameAccount> findPendingListingsEntities() {
-        log.info("Finding pending listings entities for internal use");
-        return gameAccountRepository.findByStatusOrderByCreatedAtAsc(ListingStatus.PENDING);
     }
 
     /**

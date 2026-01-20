@@ -47,6 +47,7 @@ class HomeControllerTest {
                 "Gold III",
                 500000L,
                 "Test description for Gold account",
+                null,
                 LocalDateTime.of(2026, 1, 18, 10, 0),
                 "seller1"
             ),
@@ -56,6 +57,7 @@ class HomeControllerTest {
                 "Diamond II",
                 2000000L,
                 "Test description for Diamond account",
+                null,
                 LocalDateTime.of(2026, 1, 17, 15, 30),
                 "seller2"
             )

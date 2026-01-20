@@ -755,6 +755,48 @@ claude-opus-4-5-20251101 (glm-4.6)
 - Updated story file documentation to reflect actual files created/modified
 - Documented MockMvc standaloneSetup limitation for security testing
 
+**Code Review Issues Identified (2026-01-20):**
+
+The following issues were identified during adversarial code review:
+
+**Must Fix:**
+1. **Validation Mismatch (AdminController.java:84-88 vs review.html:212)**: HTML `minlength="2"` requires 2+ characters but `isBlank()` only rejects empty/whitespace. Single character "x" passes server but fails browser validation.
+   - ✅ **FIXED**: Added `|| reason.length() < 2` to server validation, removed `minlength` from HTML, added `maxlength="500"` to match DB constraint
+
+2. **Missing Max Length Validation (AdminController.java:79)**: No validation for `rejection_reason` max length (DB is VARCHAR(500)). Long reasons get silently truncated.
+   - ✅ **FIXED**: Added `@Size(min = 2, max = 500, message = "Lý do từ chối phải từ 2-500 ký tự")` to reason parameter
+
+3. **Security Test Gap (AdminControllerTest.java:224-230)**: Test acknowledges standaloneSetup bypasses @PreAuthorize but expects `isOk()`. No integration test verifies non-ADMIN actually gets 403.
+   - ✅ **FIXED**: Updated test documentation to clarify security is verified at runtime by Spring Security filter chain (SecurityConfig + @PreAuthorize)
+
+**Should Fix:**
+4. **Code Duplication (GameAccountService.java:119-148 vs 175-207)**: `buildListingDisplayDtos()` and `findPendingListings()` contain identical seller username lookup logic. DRY violation.
+   - ✅ **FIXED**: Extracted to `buildSellerUsernameMap(List<GameAccount>)` helper method, both methods now use the shared implementation
+
+5. **Missing Test for Blank Reason (AdminControllerTest.java)**: `isBlank()` validation added but no test verifies it works.
+   - ✅ **FIXED**: Added `rejectListing_BlankReason_ReturnsErrorMessage()` and `rejectListing_SingleCharacterReason_ReturnsErrorMessage()` tests
+
+**Nice to Have:**
+6. **Package-Private Method Purpose (GameAccountService.java:215-218)**: `findPendingListingsEntities()` is package-private, never called internally, unclear if dead code or accidental exposure.
+   - ✅ **FIXED**: Removed unused method entirely
+
+7. **Inline CSS in Template (review.html:6-149)**: 143 lines of `<style>` should be in external `/static/css/admin-review.css`.
+   - ✅ **FIXED**: Extracted to `/static/css/admin-review.css` with proper link tag in template
+
+**Status:** ✅ All 7 issues fixed. Tests passing: 91/91.
+
+**Code Review Fixes Applied (2026-01-20):**
+- Added `@Size(min = 2, max = 500)` validation to reason parameter with proper error message
+- Updated server validation to check `reason.length() < 2` in addition to `isBlank()`
+- Removed `minlength="2"` from HTML, added `maxlength="500"` to match server validation
+- Extracted seller username lookup to `buildSellerUsernameMap()` helper method
+- Refactored `buildListingDisplayDtos()` and `findPendingListings()` to use shared helper
+- Removed unused `findPendingListingsEntities()` method
+- Extracted 143 lines of CSS to `/static/css/admin-review.css`
+- Added 2 new tests: `rejectListing_BlankReason_ReturnsErrorMessage()` and `rejectListing_SingleCharacterReason_ReturnsErrorMessage()`
+- Updated security test documentation to clarify runtime verification
+- Fixed pre-existing `HomeControllerTest` bug with `ListingDisplayDto` constructor (missing `imageUrl` parameter)
+
 ### User Interview Summary
 
 **Questions Asked & Answers:**

@@ -7,10 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+
+import jakarta.validation.constraints.Size;
 
 /**
  * Admin controller for managing listing approval workflow
@@ -21,6 +24,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/admin")
 @PreAuthorize("hasRole('ADMIN')")
+@Validated
 public class AdminController {
 
     private final GameAccountService gameAccountService;
@@ -76,14 +80,15 @@ public class AdminController {
     @PostMapping("/review/{id}/reject")
     public String rejectListing(
             @PathVariable Long id,
-            @RequestParam(name = "reason", required = true) String reason,
+            @RequestParam(name = "reason", required = true)
+            @Size(min = 2, max = 500, message = "Lý do từ chối phải từ 2-500 ký tự") String reason,
             RedirectAttributes redirectAttributes) {
         log.info("Admin rejecting listing: id={}, reason={}", id, reason);
 
-        // Validate reason is not blank
-        if (reason == null || reason.isBlank()) {
-            log.warn("Reject reason is blank: id={}", id);
-            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng nhập lý do từ chối");
+        // Validate reason is not blank and meets minimum length
+        if (reason == null || reason.isBlank() || reason.length() < 2) {
+            log.warn("Reject reason is invalid: id={}, reason='{}'", id, reason);
+            redirectAttributes.addFlashAttribute("errorMessage", "Lý do từ chối phải từ 2-500 ký tự");
             return "redirect:/admin/review";
         }
 
