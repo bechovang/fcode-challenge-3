@@ -4,10 +4,15 @@ spring:
 
   # Database configuration
   datasource:
-    url: jdbc:mysql://localhost:3306/gameaccountshop?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3306/gameaccountshop?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: YOUR_MYSQL_PASSWORD_HERE  # CHANGE THIS to your MySQL root password
+    password: YOUR_MYSQL_PASSWORD  # CHANGE THIS to your MySQL root password
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      auto-commit: true
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
 
   # JPA/Hibernate configuration
   jpa:
@@ -18,8 +23,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
 
-  # Flyway configuration
+  # Flyway database migrations
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -29,6 +38,13 @@ spring:
   devtools:
     restart:
       enabled: true
+
+  # File upload configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 32MB
+      max-request-size: 32MB
 
 # Server configuration
 server:
@@ -44,3 +60,7 @@ logging:
     org.springframework.security: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# ImgBB Image Upload API
+imgbb:
+  api-key: YOUR_IMGBB_API_KEY  # Get your free API key from https://api.imgbb.com/
