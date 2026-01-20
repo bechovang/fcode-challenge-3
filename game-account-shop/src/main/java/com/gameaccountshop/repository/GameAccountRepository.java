@@ -4,6 +4,7 @@ import com.gameaccountshop.dto.ListingDetailDto;
 import com.gameaccountshop.dto.ListingDisplayDto;
 import com.gameaccountshop.entity.GameAccount;
 import com.gameaccountshop.enums.ListingStatus;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +24,21 @@ public interface GameAccountRepository extends JpaRepository<GameAccount, Long> 
     // NEW for Story 2.2: Find pending listings (oldest first - FIFO for Story 2.4)
     List<GameAccount> findByStatusOrderByCreatedAtAsc(ListingStatus status);
 
+    // NEW for Story 2.2 Improvements: Robust search with aliases (handled in Service), content search, rank filter, and sorting
+    @Query("SELECT g FROM GameAccount g WHERE g.status = :status " +
+           "AND (:rank IS NULL OR g.accountRank LIKE CONCAT(:rank, '%')) " +
+           "AND (:search IS NULL OR (" +
+           "   LOWER(g.gameName) LIKE CONCAT('%', LOWER(:search), '%') " +
+           "   OR LOWER(g.description) LIKE CONCAT('%', LOWER(:search), '%') " +
+           "   OR LOWER(g.accountRank) LIKE CONCAT('%', LOWER(:search), '%') " +
+           "   OR g.sellerId IN (SELECT u.id FROM User u WHERE LOWER(u.username) LIKE CONCAT('%', LOWER(:search), '%'))" +
+           "))")
+    List<GameAccount> findApprovedListings(@Param("search") String search,
+                                           @Param("rank") String rank,
+                                           @Param("status") ListingStatus status,
+                                           Sort sort);
+
+    // OLD methods kept for reference or legacy compatibility if needed, but the new one supersedes them for the main page
     // NEW for Story 2.2: Filter by account rank (e.g., "Gold", "Diamond") with ORDER BY
     @Query("SELECT g FROM GameAccount g WHERE g.accountRank = :rank AND g.status = :status ORDER BY g.createdAt DESC")
     List<GameAccount> findByStatusAndAccountRank(@Param("rank") String rank, @Param("status") ListingStatus status);

@@ -11,6 +11,7 @@ import com.gameaccountshop.exception.ResourceNotFoundException;
 import com.gameaccountshop.repository.GameAccountRepository;
 import com.gameaccountshop.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class GameAccountService {
+
+    private static final Map<String, String> GAME_ALIASES = Map.of(
+        "lol", "Liên Minh Huyền Thoại",
+        "league of legends", "Liên Minh Huyền Thoại",
+        "lien minh", "Liên Minh Huyền Thoại",
+        "lmht", "Liên Minh Huyền Thoại"
+    );
 
     private final GameAccountRepository gameAccountRepository;
     private final UserRepository userRepository;
@@ -69,38 +77,34 @@ public class GameAccountService {
      * Story 2.2: Browse Listings with Search/Filter
      * Returns ListingDisplayDto with seller username
      *
-     * @param search Optional search keyword (game name LIKE)
-     * @param rank Optional account rank filter (exact match)
+     * @param search Optional search keyword (game name LIKE, description LIKE, rank LIKE)
+     * @param rank Optional account rank filter (starts with)
+     * @param sortParam Optional sort parameter (price_asc, price_desc, newest)
      * @return List of ListingDisplayDto with seller username matching criteria
      */
-    public List<ListingDisplayDto> findApprovedListings(String search, String rank) {
-        log.info("Finding approved listings: search={}, rank={}", search, rank);
+    public List<ListingDisplayDto> findApprovedListings(String search, String rank, String sortParam) {
+        log.info("Finding approved listings: search={}, rank={}, sort={}", search, rank, sortParam);
 
-        List<GameAccount> gameAccounts;
+        // 1. Handle Aliases
+        String effectiveSearch = search;
+        if (search != null && !search.isBlank()) {
+            String lowerSearch = search.toLowerCase().trim();
+            if (GAME_ALIASES.containsKey(lowerSearch)) {
+                effectiveSearch = GAME_ALIASES.get(lowerSearch);
+                log.debug("Mapped alias '{}' to '{}'", search, effectiveSearch);
+            }
+        }
 
-        // Both search and rank provided - filter by rank first, then search in-memory (repository handles ORDER BY)
-        if (search != null && !search.isBlank() && rank != null && !rank.isBlank()) {
-            log.debug("Applying both search and rank filter");
-            List<GameAccount> byRank = gameAccountRepository.findByStatusAndAccountRank(rank, ListingStatus.APPROVED);
-            gameAccounts = byRank.stream()
-                    .filter(g -> g.getGameName().toLowerCase().contains(search.toLowerCase()))
-                    .toList();
+        // 2. Handle Sorting
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt"); // Default (newest)
+        if ("price_asc".equals(sortParam)) {
+            sort = Sort.by(Sort.Direction.ASC, "price");
+        } else if ("price_desc".equals(sortParam)) {
+            sort = Sort.by(Sort.Direction.DESC, "price");
         }
-        // Only search provided
-        else if (search != null && !search.isBlank()) {
-            log.debug("Applying search filter only");
-            gameAccounts = gameAccountRepository.findByGameNameContainingAndStatus(search, ListingStatus.APPROVED);
-        }
-        // Only rank provided
-        else if (rank != null && !rank.isBlank()) {
-            log.debug("Applying rank filter only");
-            gameAccounts = gameAccountRepository.findByStatusAndAccountRank(rank, ListingStatus.APPROVED);
-        }
-        // No filters - return all approved
-        else {
-            log.debug("No filters applied, returning all approved listings");
-            gameAccounts = gameAccountRepository.findByStatusOrderByCreatedAtDesc(ListingStatus.APPROVED);
-        }
+
+        // 3. Call Repository
+        List<GameAccount> gameAccounts = gameAccountRepository.findApprovedListings(effectiveSearch, rank, ListingStatus.APPROVED, sort);
 
         // Build ListingDisplayDto with seller username lookup
         return buildListingDisplayDtos(gameAccounts);

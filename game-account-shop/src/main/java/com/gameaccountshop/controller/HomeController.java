@@ -27,12 +27,14 @@ public class HomeController {
     public String home(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String rank,
+            @RequestParam(required = false) String sort,
             Model model) {
 
-        List<ListingDisplayDto> listings = gameAccountService.findApprovedListings(search, rank);
+        List<ListingDisplayDto> listings = gameAccountService.findApprovedListings(search, rank, sort);
         model.addAttribute("listings", listings);
         model.addAttribute("search", search);
         model.addAttribute("rank", rank);
+        model.addAttribute("sort", sort);
 
         return "home";
     }
