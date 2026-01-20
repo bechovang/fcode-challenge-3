@@ -48,6 +48,8 @@ public class GameAccountService {
         gameAccount.setAccountRank(dto.getAccountRank());
         gameAccount.setPrice(dto.getPrice());
         gameAccount.setDescription(dto.getDescription());
+        gameAccount.setAccountUsername(dto.getAccountUsername());
+        gameAccount.setAccountPassword(dto.getAccountPassword());
         gameAccount.setSellerId(sellerId);
         gameAccount.setStatus(ListingStatus.PENDING);
 

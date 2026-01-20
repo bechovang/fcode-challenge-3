@@ -19,6 +19,14 @@ public class GameAccountDto {
     @Size(max = 2000, message = "Mô tả không được vượt quá 2000 ký tự")
     private String description;
 
+    @NotBlank(message = "Vui lòng nhập tên tài khoản game")
+    @Size(max = 100, message = "Tên tài khoản không được vượt quá 100 ký tự")
+    private String accountUsername;
+
+    @NotBlank(message = "Vui lòng nhập mật khẩu tài khoản game")
+    @Size(max = 100, message = "Mật khẩu không được vượt quá 100 ký tự")
+    private String accountPassword;
+
     public String getAccountRank() { return accountRank; }
     public void setAccountRank(String accountRank) { this.accountRank = accountRank; }
 
@@ -27,4 +35,10 @@ public class GameAccountDto {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getAccountUsername() { return accountUsername; }
+    public void setAccountUsername(String accountUsername) { this.accountUsername = accountUsername; }
+
+    public String getAccountPassword() { return accountPassword; }
+    public void setAccountPassword(String accountPassword) { this.accountPassword = accountPassword; }
 }

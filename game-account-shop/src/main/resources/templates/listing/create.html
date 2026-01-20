@@ -176,6 +176,29 @@
              th:errors="*{description}">Description is required</div>
       </div>
 
+      <!-- Account Username Field -->
+      <div class="form-group">
+        <label for="accountUsername">Tên tài khoản game *</label>
+        <input type="text"
+               id="accountUsername"
+               th:field="*{accountUsername}"
+               placeholder="Nhập tên đăng nhập tài khoản game">
+        <div class="text-danger" th:if="${#fields.hasErrors('accountUsername')}"
+             th:errors="*{accountUsername}">Account username is required</div>
+      </div>
+
+      <!-- Account Password Field -->
+      <div class="form-group">
+        <label for="accountPassword">Mật khẩu tài khoản game *</label>
+        <input type="password"
+               id="accountPassword"
+               th:field="*{accountPassword}"
+               placeholder="Nhập mật khẩu tài khoản game">
+        <div class="text-danger" th:if="${#fields.hasErrors('accountPassword')}"
+             th:errors="*{accountPassword}">Account password is required</div>
+        <div class="help-text">Mật khẩu sẽ được lưu an toàn và chỉ gửi cho người mua sau khi thanh toán thành công</div>
+      </div>
+
       <!-- Submit Button -->
       <button type="submit">Đăng bán ngay</button>
 

@@ -25,6 +25,12 @@ public class GameAccount {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "account_username", length = 100)
+    private String accountUsername;
+
+    @Column(name = "account_password", length = 100)
+    private String accountPassword;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private ListingStatus status = ListingStatus.PENDING;
@@ -69,6 +75,12 @@ public class GameAccount {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getAccountUsername() { return accountUsername; }
+    public void setAccountUsername(String accountUsername) { this.accountUsername = accountUsername; }
+
+    public String getAccountPassword() { return accountPassword; }
+    public void setAccountPassword(String accountPassword) { this.accountPassword = accountPassword; }
 
     public ListingStatus getStatus() { return status; }
     public void setStatus(ListingStatus status) { this.status = status; }
