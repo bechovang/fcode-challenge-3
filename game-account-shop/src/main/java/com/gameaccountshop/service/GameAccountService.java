@@ -36,13 +36,16 @@ public class GameAccountService {
     private final GameAccountRepository gameAccountRepository;
     private final UserRepository userRepository;
     private final ImageUploadService imageUploadService;
+    private final EmailService emailService;
 
     public GameAccountService(GameAccountRepository gameAccountRepository,
                              UserRepository userRepository,
-                             ImageUploadService imageUploadService) {
+                             ImageUploadService imageUploadService,
+                             EmailService emailService) {
         this.gameAccountRepository = gameAccountRepository;
         this.userRepository = userRepository;
         this.imageUploadService = imageUploadService;
+        this.emailService = emailService;
     }
 
     /**
@@ -236,6 +239,7 @@ public class GameAccountService {
     /**
      * Approve a listing
      * Story 2.4: Admin Approve/Reject Listings
+     * Story 2.7: Listing Email Notifications
      *
      * @param id Listing ID
      * @throws ResourceNotFoundException if listing not found
@@ -260,11 +264,31 @@ public class GameAccountService {
         gameAccountRepository.save(listing);
 
         log.info("Admin approved listing: id={}", id);
+
+        // Story 2.7: Send approval email (async and non-blocking)
+        try {
+            User seller = userRepository.findById(listing.getSellerId())
+                .orElseThrow(() -> new RuntimeException("Seller not found"));
+
+            // Assuming standard URL structure. In a real app, this should come from config or request.
+            String listingUrl = "http://localhost:8080/listings/" + id;
+
+            emailService.sendListingApprovedEmail(
+                seller.getEmail(),
+                listing.getGameName(),
+                listing.getAccountRank(),
+                listing.getPrice(),
+                listingUrl
+            );
+        } catch (Exception e) {
+            log.error("Failed to initiate approval email sending for listing: {}", id, e);
+        }
     }
 
     /**
      * Reject a listing with reason
      * Story 2.4: Admin Approve/Reject Listings
+     * Story 2.7: Listing Email Notifications
      *
      * @param id Listing ID
      * @param reason Rejection reason
@@ -291,6 +315,22 @@ public class GameAccountService {
         gameAccountRepository.save(listing);
 
         log.info("Admin rejected listing: id={}, reason={}", id, reason);
+
+        // Story 2.7: Send rejection email (async and non-blocking)
+        try {
+            User seller = userRepository.findById(listing.getSellerId())
+                .orElseThrow(() -> new RuntimeException("Seller not found"));
+
+            emailService.sendListingRejectedEmail(
+                seller.getEmail(),
+                listing.getGameName(),
+                listing.getAccountRank(),
+                listing.getPrice(),
+                reason
+            );
+        } catch (Exception e) {
+            log.error("Failed to initiate rejection email sending for listing: {}", id, e);
+        }
     }
 
     /**
