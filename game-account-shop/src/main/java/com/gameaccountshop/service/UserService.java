@@ -36,6 +36,11 @@ public class UserService {
             throw new BusinessException("Tên đăng nhập đã tồn tại!");
         }
 
+        // Check if email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Email đã được sử dụng!");
+        }
+
         // Create new user entity
         User user = new User();
         user.setUsername(request.getUsername());
