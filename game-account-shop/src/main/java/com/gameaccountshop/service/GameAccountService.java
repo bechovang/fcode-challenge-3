@@ -11,6 +11,7 @@ import com.gameaccountshop.exception.ResourceNotFoundException;
 import com.gameaccountshop.repository.GameAccountRepository;
 import com.gameaccountshop.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,9 @@ public class GameAccountService {
     private final UserRepository userRepository;
     private final ImageUploadService imageUploadService;
     private final EmailService emailService;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public GameAccountService(GameAccountRepository gameAccountRepository,
                              UserRepository userRepository,
@@ -271,7 +275,7 @@ public class GameAccountService {
                 .orElseThrow(() -> new RuntimeException("Seller not found"));
 
             // Assuming standard URL structure. In a real app, this should come from config or request.
-            String listingUrl = "http://localhost:8080/listings/" + id;
+            String listingUrl = baseUrl + "/listings/" + id;
 
             emailService.sendListingApprovedEmail(
                 seller.getEmail(),

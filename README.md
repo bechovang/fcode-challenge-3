@@ -336,6 +336,11 @@ spring:
     username: root
     password: YOUR_MYSQL_PASSWORD  # Change to your MySQL root password
 
+# Email configuration (required for listing approval notifications)
+  mail:
+    username: your-email@gmail.com  # CHANGE THIS: Your Gmail address
+    password: xxxx xxxx xxxx xxxx   # CHANGE THIS: Your 16-character App Password
+
 # ImgBB Image Upload API (optional - for image upload feature)
 imgbb:
   api-key: YOUR_IMGBB_API_KEY  # Get free key from https://api.imgbb.com/
@@ -346,7 +351,36 @@ imgbb:
 | Setting | Description | Default |
 |---------|-------------|---------|
 | `spring.datasource.password` | MySQL root password | `YOUR_MYSQL_PASSWORD` |
+| `spring.mail.username` | Gmail address for sending emails | `your-email@gmail.com` |
+| `spring.mail.password` | Gmail App Password (see below) | `xxxx xxxx xxxx xxxx` |
 | `imgbb.api-key` | ImgBB API key for image upload | `YOUR_IMGBB_API_KEY` |
+
+**Setting up Gmail for Email Notifications (Required):**
+
+The application sends email notifications to sellers when their listings are approved or rejected. To enable this:
+
+1. **Enable 2-Step Verification** on your Google Account:
+   - Go to https://myaccount.google.com/security
+   - Find "2-Step Verification" and enable it
+
+2. **Create an App Password**:
+   - Go to https://myaccount.google.com/apppasswords
+   - Select "Mail" and "Other (Custom name)"
+   - Enter a name like "GameShop"
+   - Click "Generate"
+   - Copy the 16-character password (e.g., `abcd efgh ijkl mnop`)
+
+3. **Configure in application.yml**:
+   ```yaml
+   spring:
+     mail:
+       username: your-email@gmail.com  # Your Gmail address
+       password: uinkjxbccstgvtzv     # Paste the 16-character App Password WITHOUT spaces
+   ```
+
+   **Important:** Remove all spaces from the App Password when pasting into `application.yml`. For example, if Google gives you `abcd efgh ijkl mnop`, enter it as `abcdefghijklmnop`.
+
+**Note:** If you don't configure email, listing approval/rejection notifications will fail silently in the background.
 
 **Getting an ImgBB API Key (optional):**
 
