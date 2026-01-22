@@ -11,7 +11,7 @@ inputDocuments:
 
 This document provides the **simplified newbie MVP** epic and story breakdown for fcode project - a game account marketplace platform.
 
-**Goal**: Build a working MVP with ~14 stories that's approachable for beginners while still delivering core value.
+**Goal**: Build a working MVP with ~18 stories that's approachable for beginners while still delivering core value.
 
 **Technology Stack**: Spring Boot 3.5.0, Java 17, MySQL 8.0, Bootstrap 5, Thymeleaf
 
@@ -21,9 +21,9 @@ This document provides the **simplified newbie MVP** epic and story breakdown fo
 |---------|---------|------------|
 | Basic Authentication | 3 | Easy |
 | Listings & Ratings | 7 | Easy-Medium |
-| Simple Buying with VietQR + Email | 2 | Medium |
+| Simple Buying with PayOS + Email | 5 | Medium |
 | Dashboard & Profiles | 3 | Easy-Medium |
-| **Total** | **15** | **Newbie-Friendly** |
+| **Total** | **18** | **Newbie-Friendly** |
 
 ## Epic List
 
@@ -33,11 +33,11 @@ Establish the foundation - user accounts and secure access. Every feature depend
 ### Epic 2: Listings & Ratings
 The core marketplace - sellers list accounts with images and credentials, buyers browse with search/filter, ratings build trust. Email notifications for listing approvals/rejections.
 
-### Epic 3: Simple Buying
-Complete the transaction flow with VietQR dynamic payment QR codes and automated credential delivery via email. Buyers receive notifications for payment approvals/rejections.
+### Epic 3: Simple Buying + Seller Tools
+Complete the transaction flow with PayOS payment gateway and automated credential delivery via email. Sellers manage listings with filters and track revenue. Admin processes payouts to sellers. Buyers rate and review purchases.
 
 ### Epic 4: Dashboard & Profiles
-Give sellers a profile page and admins platform oversight.
+Give sellers a profile page to showcase their listings and ratings, and admins platform oversight.
 
 ---
 
@@ -431,9 +431,9 @@ So that **I know the status of my listing without checking the website**.
 
 ## Epic 3: Simple Buying
 
-Enable buyers to purchase game accounts using VietQR payment with dynamic QR codes. Admin verifies payments and automatically sends account credentials via email. Buyers and sellers receive email notifications for all transaction status changes.
+Enable buyers to purchase game accounts using PayOS payment gateway with dynamic QR codes. Admin verifies payments and automatically sends account credentials via email. Buyers and sellers receive email notifications for all transaction status changes.
 
-### Story 3.1: Buy Now & Show VietQR Payment
+### Story 3.1: Buy Now & Show PayOS Payment
 
 As a **logged-in buyer**,
 I want **to click "Buy Now" and see a QR code with exact payment amount and description**,
@@ -460,16 +460,16 @@ So that **I can easily pay using my banking app**.
   - Total amount (e.g., 550,000 VNĐ)
   - Transaction ID
 
-**And** I see a QR code image generated from VietQR.net
+**And** I see a QR code image generated from PayOS API
 **And** the QR code contains:
-  - Bank account (from application.yml config)
   - Exact total amount
-  - Transfer description (transaction ID)
+  - Transaction ID as payment description
+  - PayOS checkout link for direct payment
 
 **And** I see payment instructions:
   - "Mở ứng dụng ngân hàng của bạn"
-  - "Quét mã QR bên dưới"
-  - "Hoặc chuyển khoản đến: [bank account]"
+  - "Quét mã QR bên dưới để thanh toán"
+  - "Hoặc nhấn vào link thanh toán trực tiếp"
   - "Số tiền: [total amount] VNĐ"
   - "Nội dung: [transaction ID]"
 
@@ -484,32 +484,44 @@ So that **I can easily pay using my banking app**.
 **Then** I cannot buy my own listing (button hidden)
 
 **Technical Notes:**
-- Transaction table: id, listing_id, buyer_id, seller_id, amount, commission, status, created_at
+- Transaction table: id, listing_id, buyer_id, seller_id, amount, commission, status, payment_link_id, created_at
 - Commission = amount * 0.10
 - Status flow: PENDING → VERIFIED → REJECTED
-- VietQR.net URL format: `https://img.vietqr.io/image/{bankId}-{accountNo}-compact.png?amount={amount}&addInfo={description}`
-- URL encode the description parameter
+- PayOS API: `POST https://api-merchant.payos.vn/v2/payment-requests`
+- Use PayOS SDK or REST API to create payment link
+- Store paymentLinkId for status checking
+- QR code can be rendered using QuickChart API: `https://quickchart.io/qr?text={qrCode}&size=300`
 - Store transaction ID in session for reference
 
 **application.yml configuration:**
 ```yaml
-vietqr:
-  bank-id: 970415
-  account-no: 113366668888
-  account-name: Your Name
+payos:
+  client-id: ${PAYOS_CLIENT_ID:your-client-id}
+  api-key: ${PAYOS_API_KEY:your-api-key}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:your-checksum-key}
+  base-url: https://api-merchant.payos.vn
 ```
 
-**Example QR URL:**
-```
-https://img.vietqr.io/image/970415-113366668888-compact.png?amount=550000&addInfo=TXN123456
+**PayOS Request Example:**
+```json
+{
+  "orderCode": 1234567890,
+  "amount": 550000,
+  "description": "Thanh toan don hang TXN123456",
+  "items": [{
+    "name": "Game Account Purchase",
+    "quantity": 1,
+    "price": 550000
+  }]
+}
 ```
 
 ---
 
-### Story 3.2: Admin Approve/Reject Transaction & Send Emails
+### Story 3.2: Admin Verify PayOS Payment & Send Emails
 
 As an **admin**,
-I want **to approve or reject payments and automatically send appropriate emails**,
+I want **to verify PayOS payment status and automatically send appropriate emails**,
 So that **buyers receive their credentials or rejection reasons promptly**.
 
 **Acceptance Criteria:**
@@ -519,16 +531,25 @@ So that **buyers receive their credentials or rejection reasons promptly**.
 **Then** I see all transactions with status = "PENDING"
 **And** each transaction displays:
   - Transaction ID
+  - Payment Link ID (from PayOS)
   - Listing info (Game Name, Rank, Image)
   - Buyer username and email
   - Seller username
   - Amount
   - Created Date
-**And** I see an "Approve & Send Credentials" button for each transaction
+**And** I see a "Check Payment Status" button for each transaction
+**And** I see a "Verify & Send Credentials" button (enabled after payment is confirmed)
 **And** I see a "Reject" button with reason input for each transaction
 
-**Given** I click "Approve & Send Credentials" for a transaction
-**When** the approval completes
+**Given** I click "Check Payment Status" for a transaction
+**When** the PayOS API is called
+**Then** the payment status from PayOS is retrieved
+**And** if PayOS status is "PAID", the "Verify & Send Credentials" button is enabled
+**And** if PayOS status is "PENDING", a message "Chờ thanh toán" is displayed
+**And** if PayOS status is "CANCELLED", a message "Giao dịch đã bị hủy" is displayed
+
+**Given** the payment is confirmed (PayOS status = "PAID")
+**When** I click "Verify & Send Credentials"
 **Then** the transaction status is updated to "VERIFIED"
 **And** the listing status is updated to "SOLD"
 **And** sold_at timestamp is set
@@ -563,6 +584,10 @@ So that **buyers receive their credentials or rejection reasons promptly**.
 **Then** a message "Không có giao dịch nào chờ xác nhận" is displayed
 
 **Technical Notes:**
+- PayOS Status Check API: `GET https://api-merchant.payos.vn/v2/payment-requests/{paymentLinkId}`
+- Headers: `x-client-id`, `x-api-key`
+- Response statuses: PENDING, PAID, CANCELLED, EXPIRED
+- Store paymentLinkId in transaction table for status checking
 - Credentials are retrieved from game_accounts.account_username and game_accounts.account_password
 - Use JavaMail API with Gmail SMTP
 - Email config in application.yml:
@@ -613,6 +638,206 @@ Nếu bạn nghĩ đây là sự nhầm lẫn, vui lòng liên hệ admin kèm �
 
 ---
 
+### Story 3.3: My Listings with Filtering + Revenue Display
+
+As a **seller**,
+I want **to view all my listings with filters and see my total earnings**,
+So that **I can manage my inventory and track my revenue**.
+
+**Acceptance Criteria:**
+
+**Given** I am logged in as a USER
+**When** I navigate to the "My Listings" page
+**Then** I see all listings where seller_id = my user ID
+**And** I can filter my listings by:
+  - Status (All, Pending, Approved, Rejected, Sold)
+  - Rank (Iron, Bronze, Silver, Gold, Platinum, Emerald, Diamond, Master, Grandmaster, Challenger)
+**And** I see my revenue summary at the top:
+  - Total Earnings: Sum of all SOLD listings (amount received)
+  - Pending Earnings: Sum of listings that are SOLD but not yet paid out
+**And** the revenue is displayed in VNĐ format (e.g., "5,500,000 VNĐ")
+
+**Given** I select a status filter (e.g., "Approved")
+**When** the filter is applied
+**Then** only my listings with that status are displayed
+**And** the filter selection is preserved
+
+**Given** I select a rank filter
+**When** the filter is applied
+**Then** only my listings with that rank are displayed
+**And** I can combine status and rank filters
+
+**Given** I have no listings
+**When** I navigate to "My Listings"
+**Then** a message "Bạn chưa có tài khoản nào" is displayed
+**And** a link to create a new listing is shown
+
+**Given** I view my listings
+**When** the page loads
+**Then** each listing displays:
+  - Image thumbnail
+  - Game Name, Rank, Price
+  - Status badge (Pending/Approved/Rejected/Sold)
+  - Created date
+  - Action button: View or Edit (if Pending)
+
+**Technical Notes:**
+- No separate dashboard - integrate into existing "My Listings" page
+- Revenue calculation:
+  - Total Earnings: `SELECT SUM(g.price) FROM game_accounts g WHERE g.seller_id = :sellerId AND g.status = 'SOLD'`
+  - Pending Earnings: Calculate from payouts that haven't been marked as "Paid" yet
+- Filter implementation: Use Thymeleaf with query parameters (e.g., `/my-listings?status=APPROVED&rank=Gold`)
+- Filters use same pattern as home page search/filter
+
+---
+
+### Story 3.4: Admin Payout System
+
+As an **admin**,
+I want **to view sellers eligible for payout and mark them as paid after manual transfer**,
+So that **sellers receive their earnings and get notified**.
+
+**Acceptance Criteria:**
+
+**Given** I am logged in as ADMIN
+**When** I navigate to the admin payout page
+**Then** I see a list of sellers who are eligible for payout
+**And** a seller is eligible if they have:
+  - At least one SOLD listing
+  - Total earnings that haven't been paid out yet
+**And** each seller in the list displays:
+  - Username
+  - Email
+  - Total earnings to be paid (sum of unpaid sold listings)
+  - Number of sold listings (unpaid)
+  - Bank account info (if provided by seller)
+  - "Mark as Paid" button
+
+**Given** I click "Mark as Paid" for a seller
+**When** the confirmation dialog appears
+**Then** I see the payment details:
+  - Seller username and email
+  - Amount to transfer
+  - Bank account information
+**And** I confirm that I have performed the manual bank transfer
+
+**Given** I confirm the payout
+**When** the payout is processed
+**Then** a Payout record is created with status "PAID"
+**And** the payout amount and timestamp are saved
+**And** an email notification is sent to the seller
+**And** the email contains:
+  - Payout amount
+  - Payout date
+  - Transaction reference
+  - Message to check their bank account
+**And** a success message "Đã đánh dấu đã thanh toán và gửi email thông báo" is displayed
+
+**Given** there are no sellers eligible for payout
+**When** I navigate to the admin payout page
+**Then** a message "Không có người bán nào chờ thanh toán" is displayed
+
+**Technical Notes:**
+- Create new `payouts` table:
+  - id, seller_id, amount, status (PENDING, PAID), paid_at, created_at
+- Payout calculation: Group unpaid sold listings by seller_id
+- Manual bank transfer - no payment gateway integration for MVP
+- Email notification uses existing EmailService
+- Admin performs transfer offline (internet banking, branch visit, etc.)
+
+**Database Schema:**
+```sql
+CREATE TABLE payouts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    seller_id BIGINT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    status ENUM('PENDING', 'PAID') NOT NULL DEFAULT 'PENDING',
+    paid_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_seller_id (seller_id),
+    INDEX idx_status (status),
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Email Template - Payout Confirmation:**
+```
+Subject: 💰 Thanh toán tiền bán tài khoản thành công!
+
+Chào bạn,
+
+Chúng tôi đã chuyển khoản khoản tiền từ việc bán tài khoản:
+
+- Số tiền: [Amount] VNĐ
+- Ngày thanh toán: [Paid Date]
+- Mã giao dịch: [Payout ID]
+
+Vui lòng kiểm tra tài khoản ngân hàng của bạn.
+
+Cảm ơn bạn đã tham gia cùng Game Account Shop!
+```
+
+---
+
+### Story 3.5: Post-Purchase Rating System
+
+As a **buyer who has purchased an account**,
+I want **to rate and review the account I bought**,
+So that **other buyers can see honest feedback**.
+
+**Acceptance Criteria:**
+
+**Given** I have purchased an account (transaction status = VERIFIED)
+**When** I navigate to the "My Ratings" page
+**Then** I see a list of all my purchased accounts
+**And** each purchase displays:
+  - Listing info (Game Name, Rank, Image)
+  - Transaction date
+  - Seller username
+  - Rating status (Pending Review, Reviewed)
+
+**Given** I have a purchase that hasn't been reviewed yet
+**When** I view the "My Ratings" page
+**Then** I see a "Đánh giá ngay" (Rate Now) button
+**And** the button is displayed prominently for pending reviews
+
+**Given** I click "Đánh giá ngay" for a purchase
+**When** the rating form appears
+**Then** I see:
+  - The listing information (Game Name, Rank, Price)
+  - Star rating (1-5 stars, clickable)
+  - Comment textarea (optional, max 500 characters)
+  - Submit button
+
+**Given** I select a star rating and optionally add a comment
+**When** I submit the review
+**Then** a new Review record is created
+**And** the review links to the transaction
+**And** the seller's average rating is recalculated
+**And** a success message "Cảm ơn đã đánh giá!" is displayed
+**And** the purchase status changes to "Reviewed"
+
+**Given** I have already reviewed a purchase
+**When** I view the "My Ratings" page
+**Then** I see my existing rating and comment
+**And** I do NOT see the "Đánh giá ngay" button (or it's disabled)
+**And** A message "Đã đánh giá" is displayed
+
+**Given** I have no purchased accounts
+**When** I navigate to "My Ratings"
+**Then** a message "Bạn chưa mua tài khoản nào" is displayed
+
+**Technical Notes:**
+- Query: `SELECT t.*, g.game_name, g.rank, g.image_url, g.price FROM transactions t JOIN game_accounts g ON t.listing_id = g.id WHERE t.buyer_id = :buyerId AND t.status = 'VERIFIED' ORDER BY t.created_at DESC`
+- Check if reviewed: `SELECT COUNT(*) FROM reviews WHERE transaction_id = :transactionId`
+- Only allow ONE review per transaction
+- Rating page: `/my-ratings`
+- Submit endpoint: `POST /ratings/submit`
+
+**Important:** This story should be implemented **BEFORE** Story 4.2 (Seller Profile Page) because the profile page needs to display seller ratings, which depend on reviews being created.
+
+---
+
 ## Epic 4: Dashboard & Profiles
 
 Provide admins with platform oversight and sellers with a profile page to showcase their listings.
@@ -652,6 +877,8 @@ So that **I can understand the platform's activity**.
 ---
 
 ### Story 4.2: Seller Profile Page
+
+> **Dependency:** This story depends on **Story 3.5 (Post-Purchase Rating System)** because the profile page displays seller ratings, which are created through the rating system.
 
 As a **buyer or visitor**,
 I want **to view a seller's profile and their listings**,
