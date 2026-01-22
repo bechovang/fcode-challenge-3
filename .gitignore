@@ -28,5 +28,16 @@ Thumbs.db
 *.log
 logs/
 
+# Application configuration with sensitive data
+game-account-shop/src/main/resources/application.yml
+application.yml
+application-*.yml
+!application.yml.example
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 
 nul
