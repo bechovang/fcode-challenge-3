@@ -211,12 +211,203 @@ src/main/resources/
 ```
 
 **Configuration Update:**
+
 ```yaml
 # application.yml
 payos:
   client-id: ${PAYOS_CLIENT_ID:your-client-id}
   api-key: ${PAYOS_API_KEY:your-api-key}
   checksum-key: ${PAYOS_CHECKSUM_KEY:your-checksum-key}
+  base-url: https://api-merchant.payos.vn
+```
+
+### Detailed Configuration Guide
+
+#### Step 1: Get PayOS Credentials
+
+1. Visit [https://my.payos.vn](https://my.payos.vn) and sign up/login
+2. Navigate to **Payment Channels** section
+3. Create a new payment channel or use existing one
+4. Copy your credentials:
+   - **Client ID** - Used for API authentication
+   - **API Key** - Used for API authentication
+   - **Checksum Key** - Used for HMAC SHA256 signature verification
+
+#### Step 2: Set Environment Variables
+
+**Create `.env` file** (in project root, DO NOT commit to git):
+
+```bash
+# PayOS Configuration
+PAYOS_CLIENT_ID=your_actual_client_id_here
+PAYOS_API_KEY=your_actual_api_key_here
+PAYOS_CHECKSUM_KEY=your_actual_checksum_key_here
+```
+
+**Or set system environment variables:**
+
+```bash
+# Linux/Mac
+export PAYOS_CLIENT_ID=your_actual_client_id_here
+export PAYOS_API_KEY=your_actual_api_key_here
+export PAYOS_CHECKSUM_KEY=your_actual_checksum_key_here
+
+# Windows (Command Prompt)
+set PAYOS_CLIENT_ID=your_actual_client_id_here
+set PAYOS_API_KEY=your_actual_api_key_here
+set PAYOS_CHECKSUM_KEY=your_actual_checksum_key_here
+
+# Windows (PowerShell)
+$env:PAYOS_CLIENT_ID="your_actual_client_id_here"
+$env:PAYOS_API_KEY="your_actual_api_key_here"
+$env:PAYOS_CHECKSUM_KEY="your_actual_checksum_key_here"
+```
+
+#### Step 3: Complete application.yml Example
+
+```yaml
+# application.yml
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gameaccountshop
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/gameaccountshop
+    username: root
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # Mail Configuration (for sending credentials)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# PayOS Payment Configuration
+payos:
+  # Client ID from my.payos.vn
+  # Use environment variable in production
+  client-id: ${PAYOS_CLIENT_ID:default-client-id}
+
+  # API Key from my.payos.vn
+  # Use environment variable in production
+  api-key: ${PAYOS_API_KEY:default-api-key}
+
+  # Checksum Key for signature verification
+  # Use environment variable in production
+  checksum-key: ${PAYOS_CHECKSUM_KEY:default-checksum-key}
+
+  # PayOS API Base URL
+  base-url: https://api-merchant.payos.vn
+
+# Application Base URL (for email links)
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+
+# Logging
+logging:
+  level:
+    com.gameaccountshop: INFO
+    com.gameaccountshop.service.PayOSService: DEBUG
+```
+
+#### Step 4: PayOSConfig Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `client-id` | String | Yes | Your PayOS Client ID from my.payos.vn |
+| `api-key` | String | Yes | Your PayOS API Key for authentication |
+| `checksum-key` | String | Yes | Key for HMAC SHA256 signature verification |
+| `base-url` | String | No | PayOS API base URL (default: https://api-merchant.payos.vn) |
+
+#### Development vs Production Setup
+
+**Development (local):**
+
+```yaml
+# application-dev.yml
+payos:
+  client-id: test-client-id-123
+  api-key: test-api-key-456
+  checksum-key: test-checksum-789
+  base-url: https://api-merchant.payos.vn
+```
+
+**Production:**
+
+```yaml
+# application-prod.yml
+payos:
+  client-id: ${PAYOS_CLIENT_ID}
+  api-key: ${PAYOS_API_KEY}
+  checksum-key: ${PAYOS_CHECKSUM_KEY}
+  base-url: ${PAYOS_BASE_URL:https://api-merchant.payos.vn}
+```
+
+#### Security Best Practices
+
+**❌ NEVER:**
+- Commit actual API keys to git repository
+- Hardcode credentials in application.yml
+- Share credentials in chat/email
+- Use production credentials in development
+
+**✅ ALWAYS:**
+- Use environment variables for sensitive data
+- Add `.env` to `.gitignore`
+- Use different credentials for dev/staging/production
+- Rotate credentials periodically
+- Monitor API usage for suspicious activity
+
+#### .gitignore Configuration
+
+Make sure your `.gitignore` includes:
+
+```gitignore
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Application configuration with secrets
+application-prod.yml
+application-*.yml
+!application-example.yml
+```
+
+#### Create application-example.yml
+
+For reference, create `application-example.yml` (safe to commit):
+
+```yaml
+# application-example.yml - Configuration template
+# Copy this to application.yml and fill in your values
+
+payos:
+  # Get your credentials from https://my.payos.vn
+  client-id: YOUR_CLIENT_ID_HERE
+  api-key: YOUR_API_KEY_HERE
+  checksum-key: YOUR_CHECKSUM_KEY_HERE
   base-url: https://api-merchant.payos.vn
 ```
 
@@ -1088,11 +1279,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 ```yaml
 # PayOS Payment Configuration
 payos:
+  # Get credentials from https://my.payos.vn
+  # Use environment variables in production
   client-id: ${PAYOS_CLIENT_ID:your-client-id}
   api-key: ${PAYOS_API_KEY:your-api-key}
   checksum-key: ${PAYOS_CHECKSUM_KEY:your-checksum-key}
   base-url: https://api-merchant.payos.vn
 ```
+
+**See "Configuration Update" section above for detailed setup guide.**
 
 ### Migration: V2__Create_Transactions_Table.sql
 
