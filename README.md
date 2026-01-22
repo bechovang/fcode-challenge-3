@@ -6,7 +6,7 @@ A beginner-friendly game account marketplace built with Spring Boot 3.5.0 and Ja
 
 **Game Account Shop** is a Vietnamese marketplace platform where:
 - **Sellers** list game accounts (Liên Minh Huyền Thoại, Valorant, etc.)
-- **Buyers** browse listings, search/filter, and purchase via VNPay QR code
+- **Buyers** browse listings, search/filter, and purchase via PayOS payment gateway
 - **Admins** approve listings, verify payments, and deliver credentials via email
 
 **Target Audience:** Newbie developers learning Spring Boot
@@ -344,6 +344,12 @@ spring:
 # ImgBB Image Upload API (optional - for image upload feature)
 imgbb:
   api-key: YOUR_IMGBB_API_KEY  # Get free key from https://api.imgbb.com/
+
+# PayOS Payment Configuration (required - for payment processing)
+payos:
+  client-id: YOUR_PAYOS_CLIENT_ID      # Your PayOS Client ID from my.payos.vn
+  api-key: YOUR_PAYOS_API_KEY          # Your PayOS API Key
+  checksum-key: YOUR_PAYOS_CHECKSUM_KEY # Your PayOS Checksum Key
 ```
 
 **Configuration Options:**
@@ -391,6 +397,80 @@ The application sends email notifications to sellers when their listings are app
 5. Paste it in `application.yml`
 
 **Note:** If you don't configure the ImgBB API key, the image upload feature will not work. You can add it later if needed.
+
+**Setting up PayOS for Payment Processing (Required):**
+
+The application uses PayOS as the payment gateway for processing purchases. To enable payments:
+
+1. **Create a PayOS Account:**
+   - Go to https://my.payos.vn
+   - Sign up for a new account
+   - Verify your email address
+
+2. **Create a Payment Channel:**
+   - Navigate to the "Payment Channels" section
+   - Click "Create New Channel"
+   - Select your bank and enter your bank account details
+   - Complete the verification process
+
+3. **Get Your API Credentials:**
+   - From the Payment Channels section, copy:
+     - **Client ID** - Used for API authentication
+     - **API Key** - Used for API authentication
+     - **Checksum Key** - Used for HMAC SHA256 signature verification
+
+4. **Configure in application.yml:**
+   ```yaml
+   payos:
+     client-id: your_actual_client_id_here
+     api-key: your_actual_api_key_here
+     checksum-key: your_actual_checksum_key_here
+     base-url: https://api-merchant.payos.vn
+   ```
+
+5. **Security Best Practices:**
+   - **NEVER** commit actual API keys to git
+   - Use environment variables in production:
+     ```bash
+     export PAYOS_CLIENT_ID=your_actual_client_id
+     export PAYOS_API_KEY=your_actual_api_key
+     export PAYOS_CHECKSUM_KEY=your_actual_checksum_key
+     ```
+   - Add `.env` to `.gitignore`
+   - Use different credentials for development and production
+
+6. **Environment Variable Setup (Production):**
+
+   **Linux/Mac:**
+   ```bash
+   export PAYOS_CLIENT_ID=your_actual_client_id
+   export PAYOS_API_KEY=your_actual_api_key
+   export PAYOS_CHECKSUM_KEY=your_actual_checksum_key
+   ```
+
+   **Windows (Command Prompt):**
+   ```cmd
+   set PAYOS_CLIENT_ID=your_actual_client_id
+   set PAYOS_API_KEY=your_actual_api_key
+   set PAYOS_CHECKSUM_KEY=your_actual_checksum_key
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:PAYOS_CLIENT_ID="your_actual_client_id"
+   $env:PAYOS_API_KEY="your_actual_api_key"
+   $env:PAYOS_CHECKSUM_KEY="your_actual_checksum_key"
+   ```
+
+7. **Test Configuration:**
+   - After configuring, start the application
+   - Try to purchase a listing
+   - Verify that QR code is generated with PayOS branding
+   - Check the payment page displays correctly
+
+**Note:** If you don't configure PayOS credentials, the payment feature will fail with an error message. You can add it later, but payment processing will not work without it.
+
+**For more details:** See `docs/payos-integration.md` for complete PayOS API documentation.
 
 ### 4. Build and Run
 
@@ -519,9 +599,10 @@ ADMIN
 | Document | Location | Description |
 |----------|----------|-------------|
 | **Database Schema** | `docs/database-schema.md` | Complete database design |
+| **PayOS Integration** | `docs/payos-integration.md` | Payment gateway setup and API documentation |
 | **Project Context** | `_bmad-output/planning-artifacts/project-context.md` | Coding standards & rules |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture.md` | System architecture decisions |
-| **Epics & Stories** | `_bmad-output/planning-artifacts/epics.md` | Feature breakdown (14 stories) |
+| **Epics & Stories** | `_bmad-output/planning-artifacts/epics.md` | Feature breakdown (18 stories) |
 | **Sprint Status** | `_bmad-output/implementation-artifacts/sprint-status.yaml` | Development progress |
 
 ---

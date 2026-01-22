@@ -90,3 +90,16 @@ logging:
 # ImgBB Image Upload API
 imgbb:
   api-key: YOUR_IMGBB_API_KEY  # Get your free API key from https://api.imgbb.com/
+
+# PayOS Payment Configuration
+# HOW TO GET PAYOS CREDENTIALS:
+# 1. Visit https://my.payos.vn and sign up/login
+# 2. Navigate to "Payment Channels" section
+# 3. Create a new payment channel or use existing one
+# 4. Copy your credentials (Client ID, API Key, Checksum Key)
+# 5. IMPORTANT: In production, use environment variables instead of hardcoding
+payos:
+  client-id: YOUR_PAYOS_CLIENT_ID      # Your PayOS Client ID from my.payos.vn
+  api-key: YOUR_PAYOS_API_KEY          # Your PayOS API Key
+  checksum-key: YOUR_PAYOS_CHECKSUM_KEY # Your PayOS Checksum Key (for signature verification)
+  base-url: https://api-merchant.payos.vn
