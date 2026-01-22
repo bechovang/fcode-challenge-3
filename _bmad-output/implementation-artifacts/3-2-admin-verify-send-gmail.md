@@ -1,4 +1,4 @@
-# Story 3.2: Admin Approve/Reject Transaction & Send Emails
+# Story 3.2: Admin Verify PayOS Payment & Send Emails
 
 Status: ready-for-dev
 
@@ -7,7 +7,7 @@ Status: ready-for-dev
 ## Story
 
 As an **admin**,
-I want **to approve or reject payments and automatically send appropriate emails**,
+I want **to verify PayOS payment status and automatically send appropriate emails**,
 So that **buyers receive their credentials or rejection reasons promptly**.
 
 ## Acceptance Criteria
@@ -17,16 +17,25 @@ So that **buyers receive their credentials or rejection reasons promptly**.
 **Then** I see all transactions with status = "PENDING"
 **And** each transaction displays:
   - Transaction ID
+  - Payment Link ID (from PayOS)
   - Listing info (Game Name, Rank, Image)
   - Buyer username and email
   - Seller username
   - Amount
   - Created Date
-**And** I see an "Approve & Send Credentials" button for each transaction
+**And** I see a "Check Payment Status" button for each transaction
+**And** I see a "Verify & Send Credentials" button (enabled after payment is confirmed)
 **And** I see a "Reject" button with reason input for each transaction
 
-**Given** I click "Approve & Send Credentials" for a transaction
-**When** the approval completes
+**Given** I click "Check Payment Status" for a transaction
+**When** the PayOS API is called
+**Then** the payment status from PayOS is retrieved
+**And** if PayOS status is "PAID", the "Verify & Send Credentials" button is enabled
+**And** if PayOS status is "PENDING", a message "Chờ thanh toán" is displayed
+**And** if PayOS status is "CANCELLED", a message "Giao dịch đã bị hủy" is displayed
+
+**Given** the payment is confirmed (PayOS status = "PAID")
+**When** I click "Verify & Send Credentials"
 **Then** the transaction status is updated to "VERIFIED"
 **And** the listing status is updated to "SOLD"
 **And** sold_at timestamp is set
@@ -62,12 +71,26 @@ So that **buyers receive their credentials or rejection reasons promptly**.
 
 ## Tasks / Subtasks
 
+- [ ] Add PayOS status checking to Transaction entity (AC: #1)
+  - [ ] Add payment_link_id field to Transaction entity
+  - [ ] Update database migration to include payment_link_id
+  - [ ] Store paymentLinkId when creating payment via PayOS
+
+- [ ] Create PayOSService for status checking (AC: #2)
+  - [ ] Create checkPaymentStatus(paymentLinkId) method
+  - [ ] Call PayOS GET /v2/payment-requests/{paymentLinkId} endpoint
+  - [ ] Parse and return payment status (PENDING, PAID, CANCELLED)
+  - [ ] Handle API errors gracefully
+
 - [ ] Create admin transaction verification page (AC: #1, #7)
   - [ ] Create admin-transactions.html Thymeleaf template
   - [ ] Fetch all PENDING transactions
-  - [ ] Display transaction list with listing info, buyer, seller, amount
-  - [ ] Add "Approve & Send Credentials" button for each transaction
+  - [ ] Display transaction list with listing info, buyer, seller, amount, payment_link_id
+  - [ ] Add "Check Payment Status" button for each transaction
+  - [ ] Add "Verify & Send Credentials" button (disabled initially)
   - [ ] Add "Reject" button with reason input for each transaction
+  - [ ] Show payment status after checking (PENDING/PAID/CANCELLED)
+  - [ ] Enable "Verify" button only when PayOS status is PAID
   - [ ] Show "no pending transactions" message when list is empty
   - [ ] Add route in AdminController
 
@@ -145,8 +168,9 @@ So that **buyers receive their credentials or rejection reasons promptly**.
 **From Story 3.1 (Buyer Click Buy):**
 - Transaction entity created with PENDING status
 - Transaction has listing_id, buyer_id, seller_id, amount, commission
+- Transaction has payment_link_id field for PayOS tracking
 - Transaction will have account_username, account_password fields (credentials from game_accounts)
-- VietQR payment page created
+- PayOS payment page created with checkout link and QR code
 
 **Key Patterns to Follow:**
 - Use TransactionService for business logic
@@ -174,6 +198,9 @@ Browser → AdminController → TransactionService → TransactionRepository →
 
 **Database Schema Updates:**
 ```sql
+-- Add payment_link_id column for PayOS tracking
+ALTER TABLE transactions ADD COLUMN payment_link_id VARCHAR(100) AFTER commission;
+
 -- Add REJECTED status to TransactionStatus enum
 ALTER TABLE transactions MODIFY COLUMN status ENUM('PENDING', 'VERIFIED', 'REJECTED') NOT NULL DEFAULT 'PENDING';
 
@@ -222,12 +249,43 @@ src/main/java/com/gameaccountshop/
 ├── controller/
 │   └── AdminController.java           # Add transaction approval endpoints
 ├── service/
-│   └── TransactionService.java        # Add approve/reject methods
-├── enums/
-│   └── TransactionStatus.java         # Add REJECTED status
+│   ├── TransactionService.java        # Add approve/reject methods
+│   └── PayOSService.java              # Add payment status checking
+├── entity/
+│   └── Transaction.java               # Add payment_link_id field
+└── enums/
+    └── TransactionStatus.java         # Add REJECTED status
 ```
 
 ### Technical Requirements
+
+**PayOS Status Check API:**
+```
+GET https://api-merchant.payos.vn/v2/payment-requests/{paymentLinkId}
+Headers:
+  x-client-id: YOUR_CLIENT_ID
+  x-api-key: YOUR_API_KEY
+```
+
+**PayOS Status Response:**
+```json
+{
+  "code": "00",
+  "desc": "success",
+  "data": {
+    "paymentLinkId": "124c33293c934a85be5b7f8761a27a07",
+    "status": "PAID",
+    "amount": 550000,
+    "orderCode": 1234567890
+  }
+}
+```
+
+**Status Values:**
+- `PENDING` - Payment not yet completed
+- `PAID` - Payment successfully completed
+- `CANCELLED` - Payment was cancelled
+- `EXPIRED` - Payment link expired
 
 **Email Templates (Vietnamese):**
 
@@ -409,7 +467,13 @@ class AdminControllerTest {
 
 **Source: epics.md**
 - Epic 3: Simple Buying
-- Story 3.2: Admin Approve/Reject Transaction & Send Emails (lines 509-614)
+- Story 3.2: Admin Verify PayOS Payment & Send Emails (lines 509-614)
+
+**Source: docs/payos-integration.md**
+- PayOS API Documentation
+- Status Check API endpoint
+- Response formats
+- Configuration examples
 
 **Source: architecture.md**
 - Data Architecture: Entity Relationship Pattern (lines 194-264)

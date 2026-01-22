@@ -1,4 +1,4 @@
-# Story 3.1: Buyer Click Buy & Show VietQR Payment
+# Story 3.1: Buy Now & Show PayOS Payment
 
 Status: ready-for-dev
 
@@ -31,16 +31,16 @@ So that **I can easily pay using my banking app**.
   - Total amount (e.g., 550,000 VNĐ)
   - Transaction ID
 
-**And** I see a QR code image generated from VietQR.net
+**And** I see a QR code image generated from PayOS API
 **And** the QR code contains:
-  - Bank account (from application.yml config)
   - Exact total amount
-  - Transfer description (transaction ID)
+  - Transaction ID as payment description
+  - PayOS checkout link for direct payment
 
 **And** I see payment instructions:
   - "Mở ứng dụng ngân hàng của bạn"
-  - "Quét mã QR bên dưới"
-  - "Hoặc chuyển khoản đến: [bank account]"
+  - "Quét mã QR bên dưới để thanh toán"
+  - "Hoặc nhấn vào link thanh toán trực tiếp"
   - "Số tiền: [total amount] VNĐ"
   - "Nội dung: [transaction ID]"
 
@@ -82,15 +82,16 @@ So that **I can easily pay using my banking app**.
   - [ ] Create payment.html Thymeleaf template
   - [ ] Display listing price, platform fee, total amount
   - [ ] Display transaction ID
-  - [ ] Display QR code from VietQR.net
+  - [ ] Display QR code from PayOS (using QuickChart API)
+  - [ ] Display PayOS checkout link
   - [ ] Display Vietnamese payment instructions
   - [ ] Show email notification message
 
-- [ ] Add VietQR configuration (AC: #2)
-  - [ ] Add VietQR config to application.yml
-  - [ ] Configure bank-id, account-no, account-name
-  - [ ] Create VietQRConfig class to load configuration
-  - [ ] Create VietQRService to generate QR code URLs
+- [ ] Add PayOS configuration (AC: #2)
+  - [ ] Add PayOS config to application.yml
+  - [ ] Configure client-id, api-key, checksum-key, base-url
+  - [ ] Create PayOSConfig class to load configuration
+  - [ ] Create PayOSService to call payment API and get QR code
 
 - [ ] Update listing detail page (AC: #3, #4)
   - [ ] Add "Mua ngay" button for APPROVED listings
@@ -194,13 +195,13 @@ src/main/java/com/gameaccountshop/
 │   └── TransactionRepository.java    # Spring Data JPA repository
 ├── service/
 │   ├── TransactionService.java       # Business logic
-│   └── VietQRService.java            # QR code URL generation
+│   └── PayOSService.java            # PayOS API integration
 ├── controller/
 │   └── TransactionController.java    # HTTP endpoints
 ├── enums/
 │   └── TransactionStatus.java        # PENDING, VERIFIED
 └── config/
-    └── VietQRConfig.java             # Configuration class
+    └── PayOSConfig.java             # Configuration class
 
 src/main/resources/
 ├── db/migration/
@@ -212,28 +213,58 @@ src/main/resources/
 **Configuration Update:**
 ```yaml
 # application.yml
-vietqr:
-  bank-id: 970415
-  account-no: 113366668888
-  account-name: Your Name
+payos:
+  client-id: ${PAYOS_CLIENT_ID:your-client-id}
+  api-key: ${PAYOS_API_KEY:your-api-key}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:your-checksum-key}
+  base-url: https://api-merchant.payos.vn
 ```
 
 ### Technical Requirements
 
-**VietQR QR Code URL Format:**
+**PayOS API Endpoint:**
 ```
-https://img.vietqr.io/image/{bankId}-{accountNo}-compact.png?amount={amount}&addInfo={description}
+POST https://api-merchant.payos.vn/v2/payment-requests
 ```
 
-**Example:**
+**PayOS Request:**
+```json
+{
+  "orderCode": 1234567890,
+  "amount": 550000,
+  "description": "Thanh toan don hang TXN123456",
+  "items": [{
+    "name": "Game Account Purchase",
+    "quantity": 1,
+    "price": 550000
+  }]
+}
 ```
-https://img.vietqr.io/image/970415-113366668888-compact.png?amount=550000&addInfo=TXN123456
+
+**PayOS Response (QR Code):**
+```json
+{
+  "code": "00",
+  "desc": "success",
+  "data": {
+    "qrCode": "000201010212...",
+    "checkoutUrl": "https://checkout.payos.vn/web/...",
+    "paymentLinkId": "124c33293c934a85be5b7f8761a27a07"
+  }
+}
+```
+
+**QR Code Display (QuickChart API):**
+```
+https://quickchart.io/qr?text={qrCode}&size=300
 ```
 
 **Implementation Notes:**
-- URL encode the description (transaction ID) parameter
-- Use URLEncoder.encode(transactionId, StandardCharsets.UTF_8)
-- Display QR code as `<img>` tag in payment template
+- Use orderCode as unique identifier (timestamp + transaction ID)
+- Call PayOS API from backend service
+- Store paymentLinkId for later status checking
+- Display QR code using QuickChart API with PayOS QR string
+- Also provide checkoutUrl as direct payment link option
 
 **Commission Calculation:**
 ```java
@@ -270,11 +301,11 @@ class TransactionServiceTest {
     - testCalculateTotalAmount()
 }
 
-@VietQRServiceTest
-class VietQRServiceTest {
-    - testGenerateQRCodeUrl()
-    - testEncodeTransactionId()
-    - testFormatAmount()
+@PayOSServiceTest
+class PayOSServiceTest {
+    - testCreatePaymentRequest()
+    - testGenerateQRCode()
+    - testGetPaymentLinkId()
 }
 ```
 
@@ -293,7 +324,12 @@ class TransactionControllerTest {
 
 **Source: epics.md**
 - Epic 3: Simple Buying
-- Story 3.1: Buy Now & Show VietQR Payment (lines 436-506)
+- Story 3.1: Buy Now & Show PayOS Payment (lines 436-506)
+
+**Source: docs/payos-integration.md**
+- PayOS API Documentation
+- Request/Response formats
+- Configuration examples
 
 **Source: architecture.md**
 - Data Architecture: Entity Relationship Pattern (lines 194-264)
