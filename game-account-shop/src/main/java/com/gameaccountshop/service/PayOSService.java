@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 /**
  * PayOS payment service using official SDK
- * Story 3.1: Buy Now & Show PayOS Payment
+ * Story 3.1: Wallet System & Buy with Balance
  *
  * Uses vn.payos.PayOS SDK which handles:
  * - Automatic signature generation
@@ -101,6 +101,62 @@ public class PayOSService {
             e.printStackTrace();
             System.out.println("===========================================================\n");
             throw new RuntimeException("Không thể tạo yêu cầu thanh toán PayOS: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create a top-up payment request with PayOS using official SDK
+     * Used for wallet top-ups
+     *
+     * @param amount Amount to top-up
+     * @param transactionId Transaction ID for logging
+     * @param description Payment description (must be <= 25 characters)
+     * @return PayOSData containing QR code, checkout URL, and payment link ID
+     * @throws RuntimeException if payment creation fails
+     */
+    public PayOSData createTopUpPayment(BigDecimal amount, String transactionId, String description) {
+        try {
+            // Generate unique order code (seconds since epoch)
+            long orderCode = System.currentTimeMillis() / 1000;
+
+            // Convert amount to long (PayOS uses long, not int)
+            long amountLong = amount.longValue();
+
+            log.info("Creating PayOS top-up payment: amount={}, transactionId={}", amount, transactionId);
+
+            // Build payment request using PayOS SDK builder pattern
+            PaymentLinkItem item = PaymentLinkItem.builder()
+                    .name("Nap vi dien tu")
+                    .quantity(1)
+                    .price(amountLong)
+                    .build();
+
+            CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
+                    .orderCode(orderCode)
+                    .amount(amountLong)
+                    .description(description)
+                    .item(item)
+                    .returnUrl("http://localhost:8080/wallet/topup/success")
+                    .cancelUrl("http://localhost:8080/wallet/topup/cancel")
+                    .build();
+
+            // Call PayOS API using SDK (handles signature automatically)
+            CreatePaymentLinkResponse response = payOS.paymentRequests().create(paymentData);
+
+            log.info("PayOS top-up payment created successfully for transaction: {}", transactionId);
+
+            // Return simplified data object
+            return new PayOSData(
+                    response.getQrCode(),
+                    response.getCheckoutUrl(),
+                    response.getPaymentLinkId(),
+                    orderCode,
+                    amountLong
+            );
+
+        } catch (Exception e) {
+            log.error("Failed to create PayOS top-up payment for transaction: {}", transactionId, e);
+            throw new RuntimeException("Không thể tạo yêu cầu nạp tiền: " + e.getMessage(), e);
         }
     }
 

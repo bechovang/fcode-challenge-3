@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Mua thành công - Game Account Shop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .success-box {
+      background: white;
+      border-radius: 16px;
+      padding: 50px 40px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 90%;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: bounce 1s ease;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    h1 {
+      color: #27ae60;
+      margin: 0 0 20px 0;
+      font-size: 28px;
+    }
+    .message {
+      color: #555;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+    .info-box {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .info-label {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    .info-value {
+      color: #2c3e50;
+      font-weight: bold;
+    }
+    .email-notice {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .email-notice h4 {
+      color: #2980b9;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+    .email-notice p {
+      margin: 8px 0;
+      color: #34495e;
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 14px 35px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="success-box">
+    <div class="icon">🎉</div>
+    <h1>Mua thành công!</h1>
+
+    <div class="message">
+      Bạn đã mua tài khoản game thành công!
+    </div>
+
+    <div class="info-box" th:if="${gameName != null or amount != null}">
+      <div class="info-row" th:if="${gameName != null}">
+        <span class="info-label">Game</span>
+        <span class="info-value" th:text="${gameName}">Liên Minh Huyền Thoại</span>
+      </div>
+      <div class="info-row" th:if="${amount != null}">
+        <span class="info-label">Số tiền đã trừ</span>
+        <span class="info-value">
+          <span th:text="${#numbers.formatInteger(amount, 3, 'POINT')}">0</span> VNĐ
+        </span>
+      </div>
+      <div class="info-row" th:if="${transactionId != null}">
+        <span class="info-label">Mã giao dịch</span>
+        <span class="info-value" th:text="'TXN' + ${transactionId}">TXN123</span>
+      </div>
+    </div>
+
+    <div class="email-notice">
+      <h4>📧 Thông tin tài khoản đã được gửi!</h4>
+      <p>Thông tin đăng nhập (username, password) đã được gửi đến email của bạn.</p>
+      <p>Vui lòng kiểm tra hộp thư (bao gồm cả spam/junk).</p>
+    </div>
+
+    <div class="email-notice" style="border-left-color: #ffc107; background: #fff3cd;">
+      <h4 style="color: #856404;">⚠️ Lưu ý quan trọng</h4>
+      <p style="color: #856404; margin: 8px 0;">• Đổi mật khẩu ngay sau khi đăng nhập</p>
+      <p style="color: #856404; margin: 8px 0;">• Không chia sẻ thông tin tài khoản cho người khác</p>
+      <p style="color: #856404; margin: 8px 0;">• Lưu thông tin ở nơi an toàn</p>
+    </div>
+
+    <a href="/" class="btn">Tiếp tục mua sắm</a>
+  </div>
+</body>
+</html>

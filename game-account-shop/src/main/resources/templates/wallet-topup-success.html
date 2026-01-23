@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đã gửi yêu cầu nạp tiền - Game Account Shop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .success-box {
+      background: white;
+      border-radius: 16px;
+      padding: 50px 40px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 90%;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #27ae60;
+      margin: 0 0 20px 0;
+      font-size: 28px;
+    }
+    .message {
+      color: #555;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+    .info-box {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .info-box h4 {
+      color: #2980b9;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+    .info-box p {
+      margin: 8px 0;
+      color: #34495e;
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 14px 35px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="success-box">
+    <div class="icon">✅</div>
+    <h1>Đã gửi yêu cầu nạp tiền</h1>
+
+    <div class="message">
+      Yêu cầu nạp tiền của bạn đã được gửi thành công!
+    </div>
+
+    <div class="info-box">
+      <h4>📋 Các bước tiếp theo</h4>
+      <p>1. Admin sẽ kiểm tra giao dịch của bạn</p>
+      <p>2. Sau khi xác nhận, số tiền sẽ được cộng vào ví</p>
+      <p>3. Bạn sẽ nhận được thông báo khi nạp tiền thành công</p>
+    </div>
+
+    <div class="info-box" style="border-left-color: #ffc107; background: #fff3cd;">
+      <h4 style="color: #856404;">⏰ Thời gian xử lý</h4>
+      <p style="color: #856404;">Thông thường: 5-15 phút</p>
+      <p style="color: #856404;">Tối đa: 24 giờ</p>
+    </div>
+
+    <a href="/" class="btn">Quay lại trang chủ</a>
+  </div>
+</body>
+</html>

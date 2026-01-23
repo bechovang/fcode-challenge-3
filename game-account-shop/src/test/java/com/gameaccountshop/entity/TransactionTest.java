@@ -108,7 +108,7 @@ class TransactionTest {
     void testTransactionStatusEnum_ShouldHaveCorrectValues() {
         // Given & When & Then
         assertEquals(TransactionStatus.PENDING, TransactionStatus.valueOf("PENDING"));
-        assertEquals(TransactionStatus.VERIFIED, TransactionStatus.valueOf("VERIFIED"));
+        assertEquals(TransactionStatus.COMPLETED, TransactionStatus.valueOf("COMPLETED"));
         assertEquals(TransactionStatus.REJECTED, TransactionStatus.valueOf("REJECTED"));
     }
 }

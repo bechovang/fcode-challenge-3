@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Nạp tiền vào ví - Game Account Shop</title>
+  <style>
+    .content {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .topup-card {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .page-title h1 {
+      color: #2c3e50;
+      font-size: 28px;
+      margin: 0 0 10px 0;
+    }
+
+    .current-balance {
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+    }
+
+    .balance-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+
+    .balance-amount {
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    .form-section {
+      margin: 25px 0;
+    }
+
+    .section-label {
+      color: #7f8c8d;
+      font-size: 14px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .preset-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .preset-btn {
+      padding: 18px;
+      background: #f8f9fa;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .preset-btn:hover {
+      background: #e7f3ff;
+      border-color: #3498db;
+      color: #3498db;
+    }
+
+    .preset-btn.selected {
+      background: #3498db;
+      border-color: #3498db;
+      color: white;
+    }
+
+    .custom-amount-input {
+      width: 100%;
+      padding: 15px 18px;
+      font-size: 18px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      box-sizing: border-box;
+      transition: border-color 0.3s;
+    }
+
+    .custom-amount-input:focus {
+      outline: none;
+      border-color: #3498dpi;
+    }
+
+    .input-hint {
+      color: #95a5a6;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 20px;
+    }
+
+    .submit-btn:hover {
+      background: #229954;
+    }
+
+    .info-box {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      margin-top: 25px;
+    }
+
+    .info-box h4 {
+      color: #2980b9;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+
+    .info-box ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #34495e;
+    }
+
+    .info-box li {
+      margin: 8px 0;
+      line-height: 1.5;
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #f5c6cb;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #3498db;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="content">
+    <!-- Flash Error Message -->
+    <div th:if="${errorMessage}" class="error-message">
+      <span th:text="${errorMessage}">Error message</span>
+    </div>
+
+    <div class="topup-card">
+      <div class="page-title">
+        <h1>💳 Nạp tiền vào ví</h1>
+      </div>
+
+      <!-- Current Balance -->
+      <div class="current-balance">
+        <div class="balance-label">Số dư hiện tại</div>
+        <div class="balance-amount">
+          <span th:text="${#numbers.formatInteger(currentBalance, 3, 'POINT')}">0</span> VNĐ
+        </div>
+      </div>
+
+      <!-- Top-up Form -->
+      <form th:action="@{/wallet/topup}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <!-- Preset Amounts -->
+        <div class="form-section">
+          <div class="section-label">Chọn mệnh giá nhanh</div>
+          <div class="preset-buttons">
+            <button type="submit" name="presetAmount" th:value="${presetAmounts[0]}"
+                    class="preset-btn" onclick="selectPreset(this)">
+              <span th:text="${#numbers.formatInteger(presetAmounts[0], 3, 'POINT')}">100.000</span> VNĐ
+            </button>
+            <button type="submit" name="presetAmount" th:value="${presetAmounts[1]}"
+                    class="preset-btn" onclick="selectPreset(this)">
+              <span th:text="${#numbers.formatInteger(presetAmounts[1], 3, 'POINT')}">200.000</span> VNĐ
+            </button>
+            <button type="submit" name="presetAmount" th:value="${presetAmounts[2]}"
+                    class="preset-btn" onclick="selectPreset(this)">
+              <span th:text="${#numbers.formatInteger(presetAmounts[2], 3, 'POINT')}">500.000</span> VNĐ
+            </button>
+            <button type="submit" name="presetAmount" th:value="${presetAmounts[3]}"
+                    class="preset-btn" onclick="selectPreset(this)">
+              <span th:text="${#numbers.formatInteger(presetAmounts[3], 3, 'POINT')}">1.000.000</span> VNĐ
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Amount -->
+        <div class="form-section">
+          <div class="section-label">Hoặc nhập số tiền khác</div>
+          <input type="number" name="customAmount"
+                 class="custom-amount-input"
+                 placeholder="Nhập số tiền nạp"
+                 min="10000"
+                 max="10000000"
+                 step="1000"/>
+          <div class="input-hint">Tối thiểu: 10.000 VNĐ | Tối đa: 10.000.000 VNĐ</div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn">Nạp tiền</button>
+      </form>
+
+      <!-- Info Box -->
+      <div class="info-box">
+        <h4>📋 Hướng dẫn nạp tiền</h4>
+        <ul>
+          <li>Nhập số tiền muốn nạp hoặc chọn mệnh giá nhanh</li>
+          <li>Nhấn nút "Nạp tiền" để tạo mã QR PayOS</li>
+          <li>Quét mã QR hoặc chuyển khoản theo thông tin</li>
+          <li>Admin sẽ xác nhận và cộng tiền vào ví của bạn</li>
+        </ul>
+      </div>
+
+      <!-- Back Link -->
+      <div style="text-align: center;">
+        <a th:href="@{/}" class="back-link">← Quay lại trang chủ</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectPreset(btn) {
+      // Reset all buttons
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+      // Set current button as selected
+      btn.classList.add('selected');
+    }
+  </script>
+</body>
+</html>

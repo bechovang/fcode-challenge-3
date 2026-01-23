@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Transaction service
- * Story 3.1: Buy Now & Show PayOS Payment
+ * Story 3.1: Wallet System & Buy with Balance
  */
 @Service
 @Slf4j
@@ -32,6 +32,14 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
         this.gameAccountRepository = gameAccountRepository;
         this.payOSService = payOSService;
+    }
+
+    /**
+     * Get PayOSService for wallet operations
+     * @return PayOSService instance
+     */
+    public PayOSService getPayOSService() {
+        return payOSService;
     }
 
     /**

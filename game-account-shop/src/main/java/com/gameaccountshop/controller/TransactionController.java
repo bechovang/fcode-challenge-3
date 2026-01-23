@@ -1,8 +1,17 @@
 package com.gameaccountshop.controller;
 
+import com.gameaccountshop.entity.GameAccount;
 import com.gameaccountshop.entity.Transaction;
+import com.gameaccountshop.entity.User;
+import com.gameaccountshop.enums.ListingStatus;
+import com.gameaccountshop.enums.TransactionStatus;
+import com.gameaccountshop.enums.TransactionType;
+import com.gameaccountshop.repository.GameAccountRepository;
+import com.gameaccountshop.repository.TransactionRepository;
+import com.gameaccountshop.repository.UserRepository;
 import com.gameaccountshop.security.CustomUserDetails;
-import com.gameaccountshop.service.TransactionService;
+import com.gameaccountshop.service.EmailService;
+import com.gameaccountshop.service.WalletService;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,24 +23,38 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+
 /**
  * Transaction controller
- * Story 3.1: Buy Now - Opens PayOS in new tab, shows notification on current page
+ * Story 3.1: Wallet System - Buy with wallet balance
  */
 @Slf4j
 @Controller
 public class TransactionController {
 
-    private final TransactionService transactionService;
+    private final WalletService walletService;
+    private final EmailService emailService;
+    private final GameAccountRepository gameAccountRepository;
+    private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
 
-    public TransactionController(TransactionService transactionService) {
-        this.transactionService = transactionService;
+    public TransactionController(WalletService walletService,
+                                  EmailService emailService,
+                                  GameAccountRepository gameAccountRepository,
+                                  TransactionRepository transactionRepository,
+                                  UserRepository userRepository) {
+        this.walletService = walletService;
+        this.emailService = emailService;
+        this.gameAccountRepository = gameAccountRepository;
+        this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
     }
 
     /**
-     * Create transaction and show pending notification page
+     * Buy listing with wallet balance
      * POST /listings/{id}/buy
-     * Story 3.1: Buy Now - Opens PayOS in new tab, shows notification on current page
+     * Story 3.1: Buy with wallet balance - immediate deduction, email sent
      */
     @PostMapping("/listings/{id}/buy")
     @PreAuthorize("isAuthenticated()")
@@ -42,77 +65,113 @@ public class TransactionController {
             RedirectAttributes redirectAttributes) {
 
         try {
-            // Get buyer ID directly from CustomUserDetails (no DB query needed)
             Long buyerId = userDetails.getId();
 
             log.info("User {} initiating purchase for listing {}", buyerId, id);
 
-            // Create transaction (this also creates PayOS payment link)
-            Transaction transaction = transactionService.createTransaction(id, buyerId);
+            // Get listing
+            GameAccount listing = gameAccountRepository.findById(id)
+                    .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản này"));
 
-            // Store transaction ID in session for webhook/reference
-            session.setAttribute("lastTransactionId", transaction.getId());
+            // Validate listing status
+            if (listing.getStatus() != ListingStatus.APPROVED) {
+                throw new IllegalStateException("Tài khoản này hiện không có sẵn để mua");
+            }
 
-            // Get PayOS checkout URL from transaction
-            String checkoutUrl = transaction.getCheckoutUrl();
+            // Prevent buying own listing
+            if (listing.getSellerId().equals(buyerId)) {
+                throw new IllegalStateException("Bạn không thể mua tài khoản của chính mình");
+            }
 
-            if (checkoutUrl == null || checkoutUrl.isEmpty()) {
-                log.error("Checkout URL is null for transaction: {}", transaction.getId());
-                redirectAttributes.addFlashAttribute("errorMessage", "Không thể tạo link thanh toán. Vui lòng thử lại.");
+            // Calculate total amount (listing price + 10% commission)
+            BigDecimal listingPrice = new BigDecimal(listing.getPrice());
+            BigDecimal commission = listingPrice.multiply(new BigDecimal("0.10"));
+            BigDecimal totalAmount = listingPrice.add(commission);
+
+            // Check wallet balance
+            if (!walletService.hasBalance(buyerId, totalAmount)) {
+                BigDecimal currentBalance = walletService.getBalance(buyerId);
+                log.warn("Insufficient balance for user {}: has={}, needs={}", buyerId, currentBalance, totalAmount);
+                redirectAttributes.addFlashAttribute("errorMessage",
+                    "Số dư không đủ. Bạn cần " + formatMoney(totalAmount) + " VNĐ nhưng chỉ có " + formatMoney(currentBalance) + " VNĐ. " +
+                    "<a href='/wallet/topup' style='color: #3498db; font-weight: bold;'>Nạp thêm tiền</a>");
                 return "redirect:/listings/" + id;
             }
 
-            log.info("Transaction created: {}, checkoutUrl: {}", transaction.getId(), checkoutUrl);
+            // Deduct balance from wallet
+            walletService.deductBalance(buyerId, totalAmount);
 
-            // Store checkout URL in session for the pending page
-            session.setAttribute("checkoutUrl", checkoutUrl);
+            // Create PURCHASE transaction
+            Transaction transaction = new Transaction();
+            transaction.setListingId(id);
+            transaction.setBuyerId(buyerId);
+            transaction.setSellerId(listing.getSellerId());
+            transaction.setAmount(listingPrice);
+            transaction.setCommission(commission);
+            transaction.setStatus(TransactionStatus.COMPLETED);
+            transaction.setTransactionType(TransactionType.PURCHASE);
+            transaction = transactionRepository.save(transaction);
 
-            // Show pending notification page (which will open PayOS in new tab)
-            return "redirect:/purchase-pending";
+            log.info("Transaction completed: {}", transaction.getId());
+
+            // Send account credentials via email immediately
+            User buyer = userRepository.findById(buyerId)
+                    .orElseThrow(() -> new IllegalStateException("Không tìm thấy người mua"));
+            emailService.sendAccountCredentialsEmail(
+                    buyer.getEmail(),
+                    listing.getGameName(),
+                    listing.getAccountRank(),
+                    listing.getAccountUsername(),
+                    listing.getAccountPassword(),
+                    listing.getDescription()
+            );
+
+            // Store transaction info in session for success page
+            session.setAttribute("purchaseTransactionId", transaction.getId());
+            session.setAttribute("purchaseGameName", listing.getGameName());
+            session.setAttribute("purchaseAmount", totalAmount);
+
+            return "redirect:/purchase-success";
 
         } catch (IllegalStateException e) {
             log.warn("Purchase failed: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/listings/" + id;
         } catch (Exception e) {
-            log.error("Error creating transaction", e);
+            log.error("Error processing purchase", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi. Vui lòng thử lại.");
             return "redirect:/listings/" + id;
         }
     }
 
     /**
-     * Show purchase pending notification page
-     * GET /purchase-pending
+     * Purchase success page
+     * GET /purchase-success
      */
-    @GetMapping("/purchase-pending")
-    public String showPurchasePending(HttpSession session, Model model) {
-        String checkoutUrl = (String) session.getAttribute("checkoutUrl");
-        if (checkoutUrl != null) {
-            model.addAttribute("checkoutUrl", checkoutUrl);
+    @GetMapping("/purchase-success")
+    @PreAuthorize("isAuthenticated()")
+    public String purchaseSuccess(HttpSession session, Model model) {
+        Long transactionId = (Long) session.getAttribute("purchaseTransactionId");
+        String gameName = (String) session.getAttribute("purchaseGameName");
+        BigDecimal amount = (BigDecimal) session.getAttribute("purchaseAmount");
+
+        if (transactionId != null) {
+            model.addAttribute("transactionId", transactionId);
         }
-        return "purchase-pending";
+        if (gameName != null) {
+            model.addAttribute("gameName", gameName);
+        }
+        if (amount != null) {
+            model.addAttribute("amount", amount);
+        }
+
+        return "purchase-success";
     }
 
     /**
-     * Payment success page - PayOS redirects here after successful payment
-     * GET /payment/success
+     * Format money with thousand separators
      */
-    @GetMapping("/payment/success")
-    public String paymentSuccess(HttpSession session) {
-        Long transactionId = (Long) session.getAttribute("lastTransactionId");
-        log.info("Payment successful for transaction: {}", transactionId);
-        return "payment-success";
-    }
-
-    /**
-     * Payment cancel page - PayOS redirects here when user cancels
-     * GET /payment/cancel
-     */
-    @GetMapping("/payment/cancel")
-    public String paymentCancel(HttpSession session) {
-        Long transactionId = (Long) session.getAttribute("lastTransactionId");
-        log.info("Payment cancelled for transaction: {}", transactionId);
-        return "payment-cancel";
+    private String formatMoney(BigDecimal amount) {
+        return String.format("%,d", amount.longValue());
     }
 }

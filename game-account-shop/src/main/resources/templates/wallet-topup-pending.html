@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đang chờ thanh toán - Game Account Shop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .pending-box {
+      background: white;
+      border-radius: 16px;
+      padding: 50px 40px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 90%;
+    }
+    .loading-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    h1 {
+      color: #333;
+      margin: 0 0 20px 0;
+      font-size: 24px;
+    }
+    .amount-display {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .amount-display .amount {
+      font-size: 36px;
+      font-weight: bold;
+    }
+    .info-list {
+      text-align: left;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+    .icon {
+      font-size: 20px;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .text {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .text strong {
+      color: #333;
+    }
+    .qr-container {
+      margin: 25px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+    .qr-code {
+      max-width: 280px;
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+      text-align: left;
+      font-size: 14px;
+      color: #856404;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 14px 35px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .btn-pay {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 14px 35px;
+      background: #27ae60;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn-pay:hover {
+      background: #229954;
+    }
+  </style>
+</head>
+<body>
+  <div class="pending-box">
+    <div class="loading-icon">💳</div>
+    <h1>Đang chờ thanh toán</h1>
+
+    <div class="amount-display" th:if="${amount}">
+      <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Số tiền cần nạp</div>
+      <div class="amount">
+        <span th:text="${#numbers.formatInteger(amount, 3, 'POINT')}">0</span> VNĐ
+      </div>
+    </div>
+
+    <div class="qr-container" th:if="${qrCode}">
+      <div style="color: #333; margin-bottom: 15px; font-weight: bold;">Quét mã QR để nạp tiền</div>
+      <img th:src="'https://quickchart.io/qr?text=' + ${qrCode} + '&size=300'"
+           alt="PayOS QR Code"
+           class="qr-code"/>
+      <div style="margin-top: 12px; font-size: 13px; color: #7f8c8d;">
+        Sử dụng app ngân hàng để quét mã
+      </div>
+    </div>
+
+    <div class="info-list">
+      <div class="info-item">
+        <span class="icon">1️⃣</span>
+        <span class="text"><strong>Mở app ngân hàng</strong> và quét mã QR bên trên</span>
+      </div>
+      <div class="info-item">
+        <span class="icon">2️⃣</span>
+        <span class="text"><strong>Nhập chính xác số tiền</strong> cần nạp</span>
+      </div>
+      <div class="info-item">
+        <span class="icon">3️⃣</span>
+        <span class="text"><strong>Xác nhận chuyển khoản</strong></span>
+      </div>
+      <div class="info-item">
+        <span class="icon">4️⃣</span>
+        <span class="text"><strong>Chờ admin xác nhận</strong> và cộng tiền vào ví</span>
+      </div>
+    </div>
+
+    <div class="note">
+      ⚠️ <strong>Lưu ý:</strong> Sau khi thanh toán, admin sẽ kiểm tra và xác nhận. Số tiền sẽ được cộng vào ví của bạn trong thời gian sớm nhất.
+    </div>
+
+    <div th:if="${checkoutUrl}">
+      <a th:href="${checkoutUrl}" target="_blank" class="btn-pay">🔗 Mở trang thanh toán PayOS</a>
+    </div>
+
+    <a href="/" class="btn">Quay lại trang chủ</a>
+  </div>
+</body>
+</html>

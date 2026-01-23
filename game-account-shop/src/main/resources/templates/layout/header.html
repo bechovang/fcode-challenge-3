@@ -61,6 +61,30 @@
       font-weight: bold;
     }
 
+    .nav-user .balance {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 13px;
+      color: white;
+    }
+
+    .nav-user .topup-btn {
+      background: #27ae60;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .nav-user .topup-btn:hover {
+      background: #229954;
+    }
+
     .logout-btn {
       background: #e74c3c;
       color: white;
@@ -106,9 +130,13 @@
       <div class="nav-links">
         <a href="/">Danh sách</a>
         <a th:href="@{/listings/create}">Đăng bán</a>
-        <a th:href="@{/admin/review}" sec:authorize="hasRole('ADMIN')">⚙️ Admin Review</a>
+        <a th:href="@{/wallet}">Ví của tôi</a>
+        <a th:href="@{/admin/review}" sec:authorize="hasRole('ADMIN')">⚙️ Admin</a>
+        <a th:href="@{/admin/topups}" sec:authorize="hasRole('ADMIN')">💰 Nạp tiền</a>
       </div>
-      <span>| Xin chào, <span class="username" sec:authentication="name">User</span>!</span>
+      <span class="balance" th:text="${#numbers.formatInteger(walletBalance, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+      <a th:href="@{/wallet/topup}" class="topup-btn">💵 Nạp tiền</a>
+      <span>| <span class="username" sec:authentication="name">User</span></span>
       <form th:action="@{/auth/logout}" method="post" style="display:inline;">
         <button type="submit" class="logout-btn">Đăng xuất</button>
       </form>

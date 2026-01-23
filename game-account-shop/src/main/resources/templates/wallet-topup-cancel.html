@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đã hủy nạp tiền - Game Account Shop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .cancel-box {
+      background: white;
+      border-radius: 16px;
+      padding: 50px 40px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 90%;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #e74c3c;
+      margin: 0 0 20px 0;
+      font-size: 28px;
+    }
+    .message {
+      color: #555;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+    .info-box {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .info-box h4 {
+      color: #2980b9;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+    .info-box p {
+      margin: 8px 0;
+      color: #34495e;
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-block;
+      margin: 10px 5px;
+      padding: 14px 35px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .btn-primary {
+      background: #27ae60;
+    }
+    .btn-primary:hover {
+      background: #229954;
+    }
+  </style>
+</head>
+<body>
+  <div class="cancel-box">
+    <div class="icon">❌</div>
+    <h1>Đã hủy giao dịch</h1>
+
+    <div class="message">
+      Bạn đã hủy giao dịch nạp tiền.
+    </div>
+
+    <div class="info-box">
+      <h4>💡 Muốn nạp tiền?</h4>
+      <p>Bạn có thể tạo lại yêu cầu nạp tiền bất cứ lúc nào.</p>
+    </div>
+
+    <a href="/wallet/topup" class="btn btn-primary">Nạp tiền lại</a>
+    <a href="/" class="btn">Quay lại trang chủ</a>
+  </div>
+</body>
+</html>

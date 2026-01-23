@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Ví của tôi - Game Account Shop</title>
+  <style>
+    .content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .page-title h1 {
+      color: #2c3e50;
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .balance-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .balance-label {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+
+    .balance-amount {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .balance-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 25px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #667eea;
+    }
+
+    .btn-primary:hover {
+      background: #f8f9fa;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .section-title {
+      color: #2c3e50;
+      font-size: 20px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .transactions-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .empty-state {
+      padding: 60px 40px;
+      text-align: center;
+      color: #95a5a6;
+    }
+
+    .empty-state .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th {
+      background: #f8f9fa;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #2c3e50;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+      padding: 15px;
+      border-bottom: 1px solid #dee2e6;
+      color: #34495e;
+    }
+
+    .table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .type-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .type-topup {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .type-purchase {
+      background: #cce5ff;
+      color: #004085;
+    }
+
+    .type-withdrawal {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .type-refund {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-completed {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-rejected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .amount {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .amount.positive {
+      color: #27ae60;
+    }
+
+    .amount.negative {
+      color: #e74c3c;
+    }
+
+    .date {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: 2px solid #dee2e6;
+      background: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="content">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>💰 Ví của tôi</h1>
+      </div>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-label">Số dư khả dụng</div>
+      <div class="balance-amount">
+        <span th:text="${#numbers.formatInteger(balance, 3, 'POINT')}">0</span> VNĐ
+      </div>
+      <div class="balance-actions">
+        <a th:href="@{/wallet/topup}" class="btn btn-primary">💵 Nạp tiền</a>
+        <a th:href="@{/}" class="btn btn-primary">🛒 Mua tài khoản</a>
+      </div>
+    </div>
+
+    <!-- Transaction History -->
+    <h2 class="section-title">Lịch sử giao dịch</h2>
+
+    <div class="transactions-card">
+      <div class="empty-state" th:if="${transactions.isEmpty()}">
+        <div class="icon">📭</div>
+        <h3>Chưa có giao dịch nào</h3>
+        <p>Bạn chưa có giao dịch nào. Nạp tiền để bắt đầu mua tài khoản!</p>
+      </div>
+
+      <table class="table" th:if="${!transactions.isEmpty()}">
+        <thead>
+          <tr>
+            <th>Mã GD</th>
+            <th>Loại</th>
+            <th>Số tiền</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="txn : ${transactions}">
+            <td>
+              <strong th:text="${txn.transactionId}">TXN123</strong>
+            </td>
+            <td>
+              <span class="type-badge" th:classappend="${txn.transactionTypeClass}" th:text="${txn.transactionTypeDisplayName}">
+                Nạp tiền
+              </span>
+            </td>
+            <td>
+              <span class="amount" th:classappend="${txn.positiveAmount ? 'positive' : 'negative'}">
+                <span th:if="${!txn.positiveAmount}">-</span>
+                <span th:if="${txn.positiveAmount}">+</span>
+                <span th:text="${#numbers.formatInteger(txn.amount, 3, 'POINT')}">100.000</span> VNĐ
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" th:classappend="${txn.statusClass}" th:text="${txn.statusDisplayName}">
+                Chờ duyệt
+              </span>
+            </td>
+            <td>
+              <div class="date" th:text="${#temporals.format(txn.createdAt, 'dd/MM/yyyy HH:mm')}">18/01/2026 14:30</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

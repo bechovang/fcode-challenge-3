@@ -16,6 +16,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
+
     private final JavaMailSender mailSender;
 
     public EmailService(JavaMailSender mailSender) {
@@ -80,6 +83,38 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.error("Failed to send rejection email to: {}", toEmail, e);
+        }
+    }
+
+    /**
+     * Send account credentials email to buyer after purchase
+     * @param toEmail Buyer's email address
+     * @param gameName Game name
+     * @param accountRank Account rank
+     * @param username Account username
+     * @param password Account password
+     * @param notes Additional notes
+     */
+    @Async
+    public void sendAccountCredentialsEmail(String toEmail, String gameName,
+                                            String accountRank, String username,
+                                            String password, String notes) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("🎮 Thông tin tài khoản game - " + gameName);
+
+            String htmlContent = buildCredentialsEmail(gameName, accountRank, username, password, notes);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Account credentials email sent to: {} for game: {}", toEmail, gameName);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send credentials email to: {}", toEmail, e);
         }
     }
 
@@ -174,5 +209,85 @@ public class EmailService {
             </body>
             </html>
             """, gameName, accountRank, String.format("%,d", price), rejectionReason);
+    }
+
+    private String buildCredentialsEmail(String gameName, String accountRank,
+                                         String username, String password, String notes) {
+        String notesSection = (notes != null && !notes.trim().isEmpty())
+            ? String.format("""
+                <div class="notes-section">
+                    <h3>📝 Ghi chú thêm:</h3>
+                    <p>%s</p>
+                </div>
+                """, notes.replace("\n", "<br>"))
+            : "";
+
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 25px; text-align: center; border-radius: 12px 12px 0 0; }
+                    .content { background: #f8f9fa; padding: 25px; border-radius: 0 0 12px 12px; }
+                    .account-info { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border: 2px solid #667eea; }
+                    .credential-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+                    .credential-row:last-child { border-bottom: none; }
+                    .credential-label { font-weight: bold; color: #555; }
+                    .credential-value { color: #2c3e50; font-family: monospace; font-size: 16px; }
+                    .notes-section { background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 20px 0; }
+                    .warning { background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545; margin: 20px 0; }
+                    .footer { text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🎮 Thông tin tài khoản game</h1>
+                    </div>
+                    <div class="content">
+                        <p>Chúc mừng! Bạn đã mua thành công tài khoản game.</p>
+
+                        <div class="account-info">
+                            <h3 style="margin-top: 0;">📋 Thông tin tài khoản:</h3>
+                            <div class="credential-row">
+                                <span class="credential-label">Game:</span>
+                                <span class="credential-value">%%s</span>
+                            </div>
+                            <div class="credential-row">
+                                <span class="credential-label">Rank:</span>
+                                <span class="credential-value">%%s</span>
+                            </div>
+                            <div class="credential-row">
+                                <span class="credential-label">Username:</span>
+                                <span class="credential-value">%%s</span>
+                            </div>
+                            <div class="credential-row">
+                                <span class="credential-label">Password:</span>
+                                <span class="credential-value">%%s</span>
+                            </div>
+                        </div>
+
+                        %%s
+
+                        <div class="warning">
+                            <strong>⚠️ Lưu ý quan trọng:</strong>
+                            <ul style="margin: 10px 0 0 20px; padding: 0;">
+                                <li>Vui lòng đổi mật khẩu ngay sau khi đăng nhập</li>
+                                <li>Không chia sẻ thông tin tài khoản cho người khác</li>
+                                <li>Lưu thông tin này ở nơi an toàn</li>
+                            </ul>
+                        </div>
+
+                        <p>Cảm ơn bạn đã mua hàng tại Game Account Shop!</p>
+                    </div>
+                    <div class="footer">
+                        <p>Email này được gửi tự động từ Game Account Shop.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """, gameName, accountRank, username, password, notesSection);
     }
 }

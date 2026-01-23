@@ -1,13 +1,14 @@
 package com.gameaccountshop.entity;
 
 import com.gameaccountshop.enums.TransactionStatus;
+import com.gameaccountshop.enums.TransactionType;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
  * Transaction entity
- * Story 3.1: Buy Now & Show PayOS Payment
+ * Story 3.1: Wallet System & Buy with Balance
  */
 @Entity
 @Table(name = "transactions")
@@ -16,7 +17,7 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "listing_id", nullable = false)
+    @Column(name = "listing_id", nullable = true)
     private Long listingId;
 
     @Column(name = "buyer_id", nullable = false)
@@ -46,6 +47,16 @@ public class Transaction {
 
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type", length = 20)
+    private TransactionType transactionType;
+
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -150,6 +161,30 @@ public class Transaction {
         this.rejectionReason = rejectionReason;
     }
 
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+    }
+
+    public Long getApprovedBy() {
+        return approvedBy;
+    }
+
+    public void setApprovedBy(Long approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
+    }
+
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -184,5 +219,100 @@ public class Transaction {
      */
     public String getTransactionId() {
         return "TXN" + id;
+    }
+
+    /**
+     * Get CSS class for transaction type badge
+     * Story 3.1: Wallet System - Used in wallet.html
+     */
+    public String getTransactionTypeClass() {
+        if (transactionType == null) {
+            return "type-refund";
+        }
+        switch (transactionType) {
+            case TOP_UP:
+                return "type-topup";
+            case PURCHASE:
+                return "type-purchase";
+            case WITHDRAWAL:
+                return "type-withdrawal";
+            case REFUND:
+                return "type-refund";
+            default:
+                return "type-refund";
+        }
+    }
+
+    /**
+     * Get CSS class for transaction status badge
+     * Story 3.1: Wallet System - Used in wallet.html
+     */
+    public String getStatusClass() {
+        if (status == null) {
+            return "status-pending";
+        }
+        switch (status) {
+            case PENDING:
+                return "status-pending";
+            case COMPLETED:
+                return "status-completed";
+            case REJECTED:
+                return "status-rejected";
+            default:
+                return "status-pending";
+        }
+    }
+
+    /**
+     * Get display name for transaction type (in Vietnamese)
+     * Story 3.1: Wallet System - Used in wallet.html
+     */
+    public String getTransactionTypeDisplayName() {
+        if (transactionType == null) {
+            return "Không xác định";
+        }
+        switch (transactionType) {
+            case TOP_UP:
+                return "Nạp tiền";
+            case PURCHASE:
+                return "Mua tài khoản";
+            case WITHDRAWAL:
+                return "Rút tiền";
+            case REFUND:
+                return "Hoàn tiền";
+            default:
+                return "Không xác định";
+        }
+    }
+
+    /**
+     * Get display name for transaction status (in Vietnamese)
+     * Story 3.1: Wallet System - Used in wallet.html
+     */
+    public String getStatusDisplayName() {
+        if (status == null) {
+            return "⏳ Chờ duyệt";
+        }
+        switch (status) {
+            case PENDING:
+                return "⏳ Chờ duyệt";
+            case COMPLETED:
+                return "✓ Hoàn thành";
+            case REJECTED:
+                return "✗ Từ chối";
+            default:
+                return "⏳ Chờ duyệt";
+        }
+    }
+
+    /**
+     * Check if this transaction shows positive amount (add to wallet)
+     * Used for displaying + or - prefix in wallet.html
+     */
+    public boolean isPositiveAmount() {
+        if (transactionType == null) {
+            return false;
+        }
+        return transactionType == TransactionType.TOP_UP || transactionType == TransactionType.REFUND;
     }
 }
