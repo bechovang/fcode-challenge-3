@@ -219,8 +219,26 @@
       <div style="margin-top: 30px;">
         <!-- APPROVED - Enabled Buy Button -->
         <div th:if="${listing.isApproved()}">
-          <!-- TODO: Link to buy flow in Story 3.1 -->
-          <a href="#" class="btn-buy">Mua ngay</a>
+          <!-- Story 3.1: Buy Now button - only show if user is not the seller -->
+          <!-- Check if user is authenticated and not the seller -->
+          <form th:if="${#authorization.expression('isAuthenticated()') and #authentication.principal.id != listing.sellerId}"
+                th:action="@{/listings/{id}/buy(id=${listing.id})}"
+                method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn-buy">Mua ngay</button>
+          </form>
+
+          <!-- Show message if user is the seller viewing own listing -->
+          <div th:if="${#authorization.expression('isAuthenticated()') and #authentication.principal.id == listing.sellerId}"
+               style="color: #e67e22; font-size: 16px; padding: 15px; background: #fff3cd; border-radius: 6px;">
+            📝 Đây là tài khoản của bạn
+          </div>
+
+          <!-- Show login prompt if user is not authenticated -->
+          <div th:if="${!#authorization.expression('isAuthenticated()')}"
+               style="color: #3498db; font-size: 16px; padding: 15px; background: #e7f3ff; border-radius: 6px;">
+            <a th:href="@{/login}" style="color: #3498db; font-weight: bold;">Đăng nhập</a> để mua tài khoản này
+          </div>
         </div>
 
         <!-- SOLD - Disabled Button with Message -->

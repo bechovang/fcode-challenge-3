@@ -97,6 +97,19 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- PayOS Java SDK - Official SDK for payment integration -->
+        <dependency>
+            <groupId>vn.payos</groupId>
+            <artifactId>payos-java</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+
+        <!-- Reactor Core (required by PayOS SDK) -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

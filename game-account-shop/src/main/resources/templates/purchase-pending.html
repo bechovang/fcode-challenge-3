@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đang xử lý thanh toán - Game Account Shop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .pending-box {
+      background: white;
+      border-radius: 16px;
+      padding: 50px 40px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+    }
+    .loading-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    h1 {
+      color: #333;
+      margin: 0 0 20px 0;
+      font-size: 24px;
+    }
+    .info-list {
+      text-align: left;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+    .icon {
+      font-size: 20px;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .text {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .text strong {
+      color: #333;
+    }
+    .note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+      text-align: left;
+      font-size: 14px;
+      color: #856404;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 14px 35px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .btn-pay {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 14px 35px;
+      background: #27ae60;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn-pay:hover {
+      background: #229954;
+    }
+  </style>
+</head>
+<body>
+  <div class="pending-box">
+    <div class="loading-icon">💳</div>
+    <h1>Đang xử lý thanh toán</h1>
+
+    <div class="info-list">
+      <div class="info-item">
+        <span class="icon">1️⃣</span>
+        <span class="text"><strong>Mở tab PayOS</strong> vừa mở để thanh toán</span>
+      </div>
+      <div class="info-item">
+        <span class="icon">2️⃣</span>
+        <span class="text"><strong>Quét mã QR</strong> hoặc nhấn link thanh toán trên đó</span>
+      </div>
+      <div class="info-item">
+        <span class="icon">3️⃣</span>
+        <span class="text"><strong>Hoàn tất thanh toán</strong> với số tiền đúng</span>
+      </div>
+      <div class="info-item">
+        <span class="icon">4️⃣</span>
+        <span class="text"><strong>Chờ admin xác nhận</strong> và gửi thông tin tài khoản qua email</span>
+      </div>
+    </div>
+
+    <div class="note">
+      ⚠️ <strong>Lưu ý:</strong> Sau khi thanh toán thành công, admin sẽ kiểm tra và gửi thông tin tài khoản game vào email của bạn trong thời gian sớm nhất.
+    </div>
+
+    <div th:if="${checkoutUrl}">
+      <a th:href="${checkoutUrl}" target="_blank" class="btn-pay">🔗 Mở lại trang thanh toán</a>
+    </div>
+
+    <a href="/" class="btn">Quay lại trang chủ</a>
+  </div>
+
+  <!-- Auto-open PayOS checkout in new tab -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    const checkoutUrl = /*[[${checkoutUrl}]]*/ '';
+    if (checkoutUrl) {
+      // Open PayOS checkout in new tab
+      window.open(checkoutUrl, '_blank');
+    }
+    /*]]>*/
+  </script>
+</body>
+</html>
