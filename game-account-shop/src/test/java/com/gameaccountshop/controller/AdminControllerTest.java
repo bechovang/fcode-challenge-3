@@ -55,12 +55,14 @@ class AdminControllerTest {
         // Given
         AdminListingDto pending1 = new AdminListingDto(
             1L, "Liên Minh Huyền Thoại", "Gold III", 500000L,
-            "Tài khoản Gold 30 tướng", "seller1", LocalDateTime.of(2026, 1, 18, 10, 0)
+            "Tài khoản Gold 30 tướng", "seller1", LocalDateTime.of(2026, 1, 18, 10, 0),
+            "https://i.imgur.com/test1.jpg"
         );
 
         AdminListingDto pending2 = new AdminListingDto(
             2L, "Liên Minh Huyền Thoại", "Diamond II", 1000000L,
-            "Tài khoản Diamond", "seller2", LocalDateTime.of(2026, 1, 18, 9, 0) // Earlier - should come first
+            "Tài khoản Diamond", "seller2", LocalDateTime.of(2026, 1, 18, 9, 0), // Earlier - should come first
+            "https://i.imgur.com/test2.jpg"
         );
 
         when(gameAccountService.findPendingListings()).thenReturn(Arrays.asList(pending2, pending1));

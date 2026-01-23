@@ -145,3 +145,18 @@
   margin-bottom: 20px;
   border: 1px solid #f5c6cb;
 }
+
+/* Issue #13: View Image link style */
+.view-image-link {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.view-image-link:hover {
+  text-decoration: underline;
+  color: #2980b9;
+}

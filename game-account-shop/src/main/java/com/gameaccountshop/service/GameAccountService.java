@@ -235,7 +235,8 @@ public class GameAccountService {
                         ga.getPrice(),
                         ga.getDescription(),
                         sellerUsernameMap.getOrDefault(ga.getSellerId(), "Unknown"),
-                        ga.getCreatedAt()
+                        ga.getCreatedAt(),
+                        ga.getImageUrl()
                 ))
                 .toList();
     }
