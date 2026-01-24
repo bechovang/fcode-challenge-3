@@ -128,12 +128,12 @@
     <div class="nav-user" sec:authorize="isAuthenticated()">
       <span class="login-status">🟢 Online</span>
       <div class="nav-links">
-        <a href="/">Danh sách</a>
+        <a href="/">Trang chủ</a>
         <a th:href="@{/listings/create}">Đăng bán</a>
-        <a th:href="@{/my-listings}">Tài khoản của tôi</a>
+        <a th:href="@{/my-listings}">Shop của tôi</a>
         <a th:href="@{/wallet}">Ví của tôi</a>
-        <a th:href="@{/admin/review}" sec:authorize="hasRole('ADMIN')">⚙️ Admin</a>
-        <a th:href="@{/admin/topups}" sec:authorize="hasRole('ADMIN')">💰 Nạp tiền</a>
+        <a th:href="@{/admin/review}" sec:authorize="hasRole('ADMIN')">⚙️ Duyệt acc</a>
+        <a th:href="@{/admin/topups}" sec:authorize="hasRole('ADMIN')">💰 Duyệt nạp tiền</a>
         <a th:href="@{/admin/payouts}" sec:authorize="hasRole('ADMIN')">💸 Thanh toán</a>
       </div>
       <span class="balance" th:text="${#numbers.formatInteger(walletBalance, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
