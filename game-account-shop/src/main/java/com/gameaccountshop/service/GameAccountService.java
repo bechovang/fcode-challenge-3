@@ -4,6 +4,7 @@ import com.gameaccountshop.dto.AdminListingDto;
 import com.gameaccountshop.dto.GameAccountDto;
 import com.gameaccountshop.dto.ListingDetailDto;
 import com.gameaccountshop.dto.ListingDisplayDto;
+import com.gameaccountshop.dto.MyListingDto;
 import com.gameaccountshop.entity.GameAccount;
 import com.gameaccountshop.entity.User;
 import com.gameaccountshop.enums.ListingStatus;
@@ -90,6 +91,54 @@ public class GameAccountService {
 
     public List<GameAccount> findBySellerId(Long sellerId) {
         return gameAccountRepository.findBySellerId(sellerId);
+    }
+
+    /**
+     * Find listings by seller with optional status filter
+     * Story 3.3: My Listings - Filtering & Profit
+     * @return List of MyListingDto (not entity) for view layer
+     */
+    public List<MyListingDto> findMyListings(Long sellerId, String status) {
+        log.debug("Finding listings for seller: {} with status: {}", sellerId, status);
+
+        List<GameAccount> listings;
+        // Apply status filter if provided
+        if (status != null && !status.isEmpty() && !status.equals("All")) {
+            ListingStatus listingStatus = ListingStatus.valueOf(status.toUpperCase());
+            listings = gameAccountRepository.findBySellerIdAndStatus(sellerId, listingStatus);
+        } else {
+            // No filter - return all listings
+            listings = gameAccountRepository.findBySellerIdOrderByCreatedAtDesc(sellerId);
+        }
+
+        // Convert to DTO for view layer (architecture compliance)
+        return listings.stream()
+                .map(ga -> new MyListingDto(
+                        ga.getId(),
+                        ga.getGameName(),
+                        ga.getAccountRank(),
+                        ga.getPrice(),
+                        ga.getImageUrl(),
+                        ga.getStatus().name(),
+                        ga.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Calculate profit from sold listings (total earnings - 10% platform commission)
+     * Story 3.3: My Listings - Filtering & Profit
+     * Profit = Sum of SOLD listing prices * 0.90
+     */
+    public Long calculateProfit(Long sellerId) {
+        Long totalEarnings = gameAccountRepository.sumPriceBySellerIdAndStatus(
+            sellerId, ListingStatus.SOLD);
+        if (totalEarnings == null || totalEarnings == 0) {
+            return 0L;
+        }
+        // Apply 10% platform commission: profit = total * 0.90
+        // Using Long arithmetic: (total * 90) / 100 = total * 0.9
+        return (totalEarnings * 90) / 100;
     }
 
     /**

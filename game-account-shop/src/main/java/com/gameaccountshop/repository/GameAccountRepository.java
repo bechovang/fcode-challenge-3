@@ -21,6 +21,14 @@ public interface GameAccountRepository extends JpaRepository<GameAccount, Long> 
     List<GameAccount> findByStatus(ListingStatus status);
     List<GameAccount> findByStatusOrderByCreatedAtDesc(ListingStatus status);
 
+    // Story 3.3: My Listings - Filtering & Profit
+    List<GameAccount> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
+    List<GameAccount> findBySellerIdAndStatus(Long sellerId, ListingStatus status);
+
+    @Query("SELECT COALESCE(SUM(g.price), 0) FROM GameAccount g WHERE g.sellerId = :sellerId AND g.status = :status")
+    Long sumPriceBySellerIdAndStatus(@Param("sellerId") Long sellerId,
+                                     @Param("status") ListingStatus status);
+
     // NEW for Story 2.2: Find pending listings (oldest first - FIFO for Story 2.4)
     List<GameAccount> findByStatusOrderByCreatedAtAsc(ListingStatus status);
 

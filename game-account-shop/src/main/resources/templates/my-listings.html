@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Tài khoản của tôi - Game Account Shop</title>
+  <style>
+    .content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .profit-section {
+      background: #d4edda;
+      color: #155724;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #c3e6cb;
+    }
+
+    .filter-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .listings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .listing-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background: white;
+      transition: box-shadow 0.3s;
+    }
+
+    .listing-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .listing-card .thumbnail {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      background-color: #f8f9fa;
+    }
+
+    .listing-card .game-name {
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .listing-card .rank {
+      color: #7f8c8d;
+      margin: 5px 0;
+    }
+
+    .listing-card .price {
+      color: #27ae60;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .listing-card .date {
+      color: #95a5a6;
+      font-size: 12px;
+      margin: 5px 0;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 60px 20px;
+      color: #7f8c8d;
+      font-size: 18px;
+    }
+
+    /* Status badge colors */
+    .badge-PENDING { background-color: #ffc107; color: #000; }
+    .badge-APPROVED { background-color: #28a745; color: #fff; }
+    .badge-SOLD { background-color: #6c757d; color: #fff; }
+    .badge-REJECTED { background-color: #dc3545; color: #fff; }
+  </style>
+</head>
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="content">
+    <h1>Tài khoản của tôi</h1>
+
+    <!-- Profit Display (simple text, no cards) -->
+    <div class="profit-section">
+      <strong>Lợi nhuận:</strong>
+      <span th:text="${#numbers.formatInteger(profit, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+      <small style="color: #0c5232;"> (Sau khi trừ 10% phí nền tảng)</small>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="filter-section">
+      <form th:action="@{/my-listings}" method="get">
+        <label for="status" style="margin-right: 10px;">Trạng thái:</label>
+        <select id="status" name="status" class="form-select" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px;">
+          <option value="">Tất cả</option>
+          <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">Chờ duyệt</option>
+          <option value="APPROVED" th:selected="${selectedStatus == 'APPROVED'}">Đã duyệt</option>
+          <option value="SOLD" th:selected="${selectedStatus == 'SOLD'}">Đã bán</option>
+          <option value="REJECTED" th:selected="${selectedStatus == 'REJECTED'}">Bị từ chối</option>
+        </select>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Lọc</button>
+        <a th:href="@{/my-listings}" style="margin-left: 10px; color: #3498db;">Đặt lại</a>
+      </form>
+    </div>
+
+    <!-- Listings Grid - REUSE EXISTING UI from home.html -->
+    <div th:if="${!listings.isEmpty()}" class="listings-grid">
+      <div th:each="listing : ${listings}" class="listing-card">
+        <!-- Image Thumbnail with fallback -->
+        <img th:if="${listing.imageUrl}"
+             th:src="${listing.imageUrl}"
+             alt="Account image"
+             class="thumbnail"
+             onerror="this.src='https://via.placeholder.com/300x200?text=No+Image';this.alt='Image not available';" />
+        <!-- Fallback if imageUrl is null -->
+        <div th:unless="${listing.imageUrl}"
+             class="thumbnail"
+             style="background: #f8f9fa; display: flex; align-items: center; justify-content: center; color: #95a5a6;">
+          <span>Không có hình ảnh</span>
+        </div>
+
+        <!-- Game Name -->
+        <div class="game-name" th:text="${listing.gameName}">Liên Minh Huyền Thoại</div>
+
+        <!-- Rank -->
+        <div class="rank">
+          Rank: <strong th:text="${listing.accountRank}">Gold III</strong>
+        </div>
+
+        <!-- Price: Formatted with comma separator -->
+        <div class="price">
+          <span th:text="${#numbers.formatInteger(listing.price, 3, 'POINT')}">500,000</span> VNĐ
+        </div>
+
+        <!-- Status Badge -->
+        <div>
+          <span class="badge"
+                th:classappend="'badge-' + ${listing.status}">
+            <span th:text="${listing.status}">Status</span>
+          </span>
+        </div>
+
+        <!-- Creation Date: DD/MM/YYYY format -->
+        <div class="date">
+          Đăng ngày: <span th:text="${#temporals.format(listing.createdAt, 'dd/MM/yyyy')}">18/01/2026</span>
+        </div>
+
+        <!-- View Details Link -->
+        <a th:href="@{/listings/{id}(id=${listing.id})}"
+           style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
+          Xem chi tiết
+        </a>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${listings.isEmpty()}" class="empty-message">
+      <h2>Bạn chưa có tài khoản nào</h2>
+      <p>Bạn chưa đăng bán tài khoản nào.</p>
+      <a th:href="@{/listings/create}" style="color: #3498db; text-decoration: none; font-weight: bold;">Đăng bán ngay</a>
+    </div>
+  </div>
+
+</body>
+</html>

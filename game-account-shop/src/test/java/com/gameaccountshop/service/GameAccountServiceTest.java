@@ -4,6 +4,7 @@ import com.gameaccountshop.dto.AdminListingDto;
 import com.gameaccountshop.dto.GameAccountDto;
 import com.gameaccountshop.dto.ListingDetailDto;
 import com.gameaccountshop.dto.ListingDisplayDto;
+import com.gameaccountshop.dto.MyListingDto;
 import com.gameaccountshop.entity.GameAccount;
 import com.gameaccountshop.entity.User;
 import com.gameaccountshop.enums.ListingStatus;
@@ -739,5 +740,182 @@ class GameAccountServiceTest {
         assertNotNull(soldListing.getSoldAt()); // sold_at unchanged
         verify(gameAccountRepository, times(1)).findById(listingId);
         verify(gameAccountRepository, never()).save(any(GameAccount.class));
+    }
+
+    // ========================================================================
+    // Story 3.3: My Listings - Filtering & Profit Tests
+    // ========================================================================
+
+    @Test
+    void findMyListings_WithNoFilter_ReturnsAllListings() {
+        // Given
+        Long sellerId = 100L;
+        GameAccount listing1 = new GameAccount();
+        listing1.setId(1L);
+        listing1.setGameName("Liên Minh Huyền Thoại");
+        listing1.setAccountRank("Gold III");
+        listing1.setPrice(500000L);
+        listing1.setImageUrl("http://example.com/img1.jpg");
+        listing1.setSellerId(sellerId);
+        listing1.setStatus(ListingStatus.PENDING);
+        listing1.setCreatedAt(LocalDateTime.now());
+
+        GameAccount listing2 = new GameAccount();
+        listing2.setId(2L);
+        listing2.setGameName("Liên Minh Huyền Thoại");
+        listing2.setAccountRank("Diamond II");
+        listing2.setPrice(1000000L);
+        listing2.setImageUrl("http://example.com/img2.jpg");
+        listing2.setSellerId(sellerId);
+        listing2.setStatus(ListingStatus.APPROVED);
+        listing2.setCreatedAt(LocalDateTime.now());
+
+        when(gameAccountRepository.findBySellerIdOrderByCreatedAtDesc(sellerId))
+            .thenReturn(Arrays.asList(listing1, listing2));
+
+        // When
+        List<MyListingDto> result = gameAccountService.findMyListings(sellerId, null);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("PENDING", result.get(0).status());
+        assertEquals("APPROVED", result.get(1).status());
+        assertEquals("Liên Minh Huyền Thoại", result.get(0).gameName());
+        verify(gameAccountRepository, times(1)).findBySellerIdOrderByCreatedAtDesc(sellerId);
+    }
+
+    @Test
+    void findMyListings_WithStatusFilter_ReturnsFilteredListings() {
+        // Given
+        Long sellerId = 100L;
+        GameAccount approvedListing = new GameAccount();
+        approvedListing.setId(2L);
+        approvedListing.setGameName("Liên Minh Huyền Thoại");
+        approvedListing.setAccountRank("Gold III");
+        approvedListing.setPrice(500000L);
+        approvedListing.setSellerId(sellerId);
+        approvedListing.setStatus(ListingStatus.APPROVED);
+        approvedListing.setCreatedAt(LocalDateTime.now());
+
+        when(gameAccountRepository.findBySellerIdAndStatus(sellerId, ListingStatus.APPROVED))
+            .thenReturn(Arrays.asList(approvedListing));
+
+        // When
+        List<MyListingDto> result = gameAccountService.findMyListings(sellerId, "APPROVED");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("APPROVED", result.get(0).status());
+        verify(gameAccountRepository, times(1)).findBySellerIdAndStatus(sellerId, ListingStatus.APPROVED);
+    }
+
+    @Test
+    void findMyListings_WithAllFilter_ReturnsAllListings() {
+        // Given
+        Long sellerId = 100L;
+        when(gameAccountRepository.findBySellerIdOrderByCreatedAtDesc(sellerId))
+            .thenReturn(Arrays.asList(testEntity));
+
+        // When
+        List<MyListingDto> result = gameAccountService.findMyListings(sellerId, "All");
+
+        // Then
+        assertNotNull(result);
+        verify(gameAccountRepository, times(1)).findBySellerIdOrderByCreatedAtDesc(sellerId);
+    }
+
+    @Test
+    void findMyListings_WithEmptyStringFilter_ReturnsAllListings() {
+        // Given
+        Long sellerId = 100L;
+        when(gameAccountRepository.findBySellerIdOrderByCreatedAtDesc(sellerId))
+            .thenReturn(Arrays.asList(testEntity));
+
+        // When
+        List<MyListingDto> result = gameAccountService.findMyListings(sellerId, "");
+
+        // Then
+        assertNotNull(result);
+        verify(gameAccountRepository, times(1)).findBySellerIdOrderByCreatedAtDesc(sellerId);
+    }
+
+    @Test
+    void calculateProfit_WithSoldListings_ReturnsNetProfitAfter10PercentCommission() {
+        // Given - Total earnings from sold listings: 1,000,000 VNĐ
+        Long sellerId = 100L;
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(1000000L);
+
+        // When
+        Long profit = gameAccountService.calculateProfit(sellerId);
+
+        // Then - Profit = 1,000,000 * 0.90 = 900,000
+        assertEquals(900000L, profit);
+        verify(gameAccountRepository, times(1)).sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD);
+    }
+
+    @Test
+    void calculateProfit_WithNoSoldListings_ReturnsZero() {
+        // Given
+        Long sellerId = 100L;
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(0L);
+
+        // When
+        Long profit = gameAccountService.calculateProfit(sellerId);
+
+        // Then
+        assertEquals(0L, profit);
+    }
+
+    @Test
+    void calculateProfit_WithNullEarnings_ReturnsZero() {
+        // Given
+        Long sellerId = 100L;
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(null);
+
+        // When
+        Long profit = gameAccountService.calculateProfit(sellerId);
+
+        // Then
+        assertEquals(0L, profit);
+    }
+
+    @Test
+    void calculateProfit_WithMultipleSoldListings_CalculatesCorrectly() {
+        // Given - Multiple sold listings totaling 1,500,000 VNĐ
+        Long sellerId = 100L;
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(1500000L);
+
+        // When
+        Long profit = gameAccountService.calculateProfit(sellerId);
+
+        // Then - Profit = 1,500,000 * 0.90 = 1,350,000
+        assertEquals(1350000L, profit);
+    }
+
+    @Test
+    void calculateProfit_Applies10PercentCommissionCorrectly() {
+        // Given - Test various amounts to verify 10% commission
+        Long sellerId = 100L;
+
+        // Test 1: 500,000 -> 450,000 (10% off)
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(500000L);
+        assertEquals(450000L, gameAccountService.calculateProfit(sellerId));
+
+        // Test 2: 1,000,000 -> 900,000 (10% off)
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(1000000L);
+        assertEquals(900000L, gameAccountService.calculateProfit(sellerId));
+
+        // Test 3: 100,000 -> 90,000 (10% off)
+        when(gameAccountRepository.sumPriceBySellerIdAndStatus(sellerId, ListingStatus.SOLD))
+            .thenReturn(100000L);
+        assertEquals(90000L, gameAccountService.calculateProfit(sellerId));
     }
 }

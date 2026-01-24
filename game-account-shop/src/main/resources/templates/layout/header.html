@@ -130,6 +130,7 @@
       <div class="nav-links">
         <a href="/">Danh sách</a>
         <a th:href="@{/listings/create}">Đăng bán</a>
+        <a th:href="@{/my-listings}">Tài khoản của tôi</a>
         <a th:href="@{/wallet}">Ví của tôi</a>
         <a th:href="@{/admin/review}" sec:authorize="hasRole('ADMIN')">⚙️ Admin</a>
         <a th:href="@{/admin/topups}" sec:authorize="hasRole('ADMIN')">💰 Nạp tiền</a>

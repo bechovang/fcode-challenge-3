@@ -83,10 +83,12 @@ public class TransactionController {
                 throw new IllegalStateException("Bạn không thể mua tài khoản của chính mình");
             }
 
-            // Calculate total amount (listing price + 10% commission)
+            // Calculate amounts
+            // Buyer pays exact listing price (no extra commission)
+            // Commission is deducted from seller's earnings
             BigDecimal listingPrice = new BigDecimal(listing.getPrice());
             BigDecimal commission = listingPrice.multiply(new BigDecimal("0.10"));
-            BigDecimal totalAmount = listingPrice.add(commission);
+            BigDecimal totalAmount = listingPrice; // Buyer pays only listing price
 
             // Check wallet balance
             if (!walletService.hasBalance(buyerId, totalAmount)) {
@@ -100,6 +102,12 @@ public class TransactionController {
 
             // Deduct balance from wallet
             walletService.deductBalance(buyerId, totalAmount);
+
+            // Mark listing as SOLD
+            listing.setStatus(ListingStatus.SOLD);
+            listing.setSoldAt(java.time.LocalDateTime.now());
+            gameAccountRepository.save(listing);
+            log.info("Listing marked as SOLD: id={}", id);
 
             // Create PURCHASE transaction
             Transaction transaction = new Transaction();
@@ -129,7 +137,7 @@ public class TransactionController {
             // Store transaction info in session for success page
             session.setAttribute("purchaseTransactionId", transaction.getId());
             session.setAttribute("purchaseGameName", listing.getGameName());
-            session.setAttribute("purchaseAmount", totalAmount);
+            session.setAttribute("purchaseAmount", listingPrice);
 
             return "redirect:/purchase-success";
 
