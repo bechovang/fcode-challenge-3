@@ -6,6 +6,7 @@ import com.gameaccountshop.entity.Payout;
 import com.gameaccountshop.entity.User;
 import com.gameaccountshop.enums.ListingStatus;
 import com.gameaccountshop.enums.PayoutStatus;
+import com.gameaccountshop.enums.Role;
 import com.gameaccountshop.repository.GameAccountRepository;
 import com.gameaccountshop.repository.PayoutRepository;
 import com.gameaccountshop.repository.UserRepository;
@@ -111,6 +112,10 @@ public class PayoutService {
     public List<AdminPayoutDto> getPayoutsByStatus(PayoutStatus status) {
         List<Payout> payouts = payoutRepository.findByStatusOrderByCreatedAtDesc(status);
 
+        if (payouts.isEmpty()) {
+            return List.of();
+        }
+
         // Get seller info for each payout
         List<Long> sellerIds = payouts.stream()
                 .map(Payout::getSellerId)
@@ -121,11 +126,12 @@ public class PayoutService {
                 .collect(Collectors.toMap(User::getId, u -> u));
 
         return payouts.stream()
-                .map(p -> AdminPayoutDto.fromEntity(
-                        p,
-                        sellerMap.getOrDefault(p.getSellerId(), new User()).getUsername(),
-                        sellerMap.getOrDefault(p.getSellerId(), new User()).getEmail()
-                ))
+                .map(p -> {
+                    User seller = sellerMap.get(p.getSellerId());
+                    String username = (seller != null) ? seller.getUsername() : "Unknown Seller";
+                    String email = (seller != null) ? seller.getEmail() : "N/A";
+                    return AdminPayoutDto.fromEntity(p, username, email);
+                })
                 .toList();
     }
 
@@ -197,14 +203,21 @@ public class PayoutService {
         // Send email to admin
         try {
             User seller = userRepository.findById(sellerId).orElse(null);
-            User admin = userRepository.findByUsername("admin").orElse(null);
-            if (seller != null && admin != null) {
-                emailService.sendPayoutReceivedEmail(
-                        admin.getEmail(),
-                        seller.getUsername(),
-                        payout.getAmount()
-                );
-                log.info("Sent payout received email to admin");
+            if (seller != null) {
+                // Find admin users by ROLE_ADMIN
+                List<User> admins = userRepository.findByRole(Role.ADMIN);
+
+                // Send to first admin found, or log warning if none exist
+                if (!admins.isEmpty()) {
+                    emailService.sendPayoutReceivedEmail(
+                            admins.get(0).getEmail(),
+                            seller.getUsername(),
+                            payout.getAmount()
+                    );
+                    log.info("Sent payout received email to admin");
+                } else {
+                    log.warn("No admin users found to send payout received email");
+                }
             }
         } catch (Exception e) {
             log.error("Failed to send payout received email for payout: {}", payoutId, e);

@@ -220,6 +220,56 @@ NEEDS_PAYMENT → PAID → RECEIVED
 
 ---
 
+## Review Follow-ups (AI-CodeReview)
+
+### 🔴 HIGH Priority Issues
+
+- [x] [AI-Review][HIGH] Create PayoutServiceTest.java - Missing tests for core business logic
+  - testCreateMonthlyPayouts_CreatesNeedsPaymentRecords()
+  - testMarkAsPaid_UpdatesStatusAndSendsEmail()
+  - testMarkAsReceived_UpdatesStatusAndSendsEmail()
+  - testCalculateUnpaidEarnings_ExcludesReceivedOnly()
+  - testGetPendingPayoutsForSeller()
+  - File: src/test/java/com/gameaccountshop/service/PayoutServiceTest.java
+
+- [x] [AI-Review][HIGH] Create PayoutSchedulerTest.java - Missing tests for scheduled task
+  - testMonthlyPayoutCreation_OnFirstOfMonth()
+  - File: src/test/java/com/gameaccountshop/scheduled/PayoutSchedulerTest.java
+
+- [x] [AI-Review][HIGH] Create AdminPayoutControllerTest.java - Missing tests for admin endpoints
+  - testShowPayouts_GroupedByStatus()
+  - testMarkAsPaid_CreatesPayoutRecord()
+  - File: src/test/java/com/gameaccountshop/controller/AdminPayoutControllerTest.java
+
+- [x] [AI-Review][HIGH] Fix hardcoded "admin" username in PayoutService.java:200
+  - Replace `userRepository.findByUsername("admin")` with configurable admin email lookup
+  - Added `findByRole(Role.ADMIN)` method to UserRepository
+  - Now queries users by ROLE_ADMIN instead of hardcoded username
+
+- [x] [AI-Review][HIGH] Fix null payout handling in getPayoutsByStatus()
+  - File: PayoutService.java:126-127
+  - Replaced `new User()` with proper null check displaying "Unknown Seller" / "N/A"
+
+- [x] [AI-Review][HIGH] Add validation for negative payout amounts
+  - Added @Min(0) annotation to Payout.amount field
+  - Added validation in Payout.setAmount() method
+
+### 🟡 MEDIUM Priority Issues
+
+- [x] [AI-Review][MEDIUM] Improve error handling in AdminPayoutController
+  - File: AdminPayoutController.java:72-77
+  - Now provides specific error messages for different failure scenarios (not found, wrong status, etc.)
+
+### 🟢 LOW Priority Issues
+
+- [x] [AI-Review][LOW] Verify @EnableScheduling is enabled in main application class
+  - Added @EnableScheduling annotation to GameAccountShopApplication.java
+
+- [ ] [AI-Review][LOW] Extract inline JavaScript from admin-payouts.html
+  - Move script to separate .js file for maintainability
+
+---
+
 ## Dev Notes
 
 ### Payout Status Flow

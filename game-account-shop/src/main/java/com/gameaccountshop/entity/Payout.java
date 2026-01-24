@@ -2,6 +2,8 @@ package com.gameaccountshop.entity;
 
 import com.gameaccountshop.enums.PayoutStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -26,6 +28,7 @@ public class Payout {
     private Long sellerId;
 
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
+    @Min(value = 0, message = "Payout amount cannot be negative")
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
@@ -60,7 +63,13 @@ public class Payout {
     public void setSellerId(Long sellerId) { this.sellerId = sellerId; }
 
     public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public void setAmount(BigDecimal amount) {
+        if (amount != null && amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Payout amount cannot be negative");
+        }
+        this.amount = amount;
+    }
 
     public PayoutStatus getStatus() { return status; }
     public void setStatus(PayoutStatus status) { this.status = status; }

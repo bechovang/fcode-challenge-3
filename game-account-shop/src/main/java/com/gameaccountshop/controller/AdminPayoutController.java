@@ -69,10 +69,22 @@ public class AdminPayoutController {
 
             return "redirect:/admin/payouts";
 
-        } catch (Exception e) {
-            log.error("Error marking payout as paid: {}", payoutId, e);
+        } catch (IllegalArgumentException e) {
+            log.error("Payout not found: {}", payoutId);
             redirectAttributes.addFlashAttribute("errorMessage",
-                "Lỗi khi xác nhận thanh toán. Vui lòng thử lại.");
+                "Không tìm thấy khoản thanh toán này.");
+            return "redirect:/admin/payouts";
+
+        } catch (IllegalStateException e) {
+            log.error("Invalid payout status for markAsPaid: {}", payoutId, e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                "Khoản thanh toán này không ở trạng thái chờ thanh toán.");
+            return "redirect:/admin/payouts";
+
+        } catch (Exception e) {
+            log.error("Unexpected error marking payout as paid: {}", payoutId, e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                "Đã xảy ra lỗi không xác định. Vui lòng thử lại.");
             return "redirect:/admin/payouts";
         }
     }
