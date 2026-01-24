@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý thanh toán - Admin</title>
+  <style>
+    .content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .page-title h1 {
+      color: #2c3e50;
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+
+    .info-box {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #17a2b8;
+    }
+
+    .info-box small {
+      display: block;
+      margin-top: 5px;
+      opacity: 0.8;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #6c757d;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab:hover {
+      color: #495057;
+    }
+
+    .tab.active {
+      color: #3498db;
+      border-bottom-color: #3498db;
+      font-weight: 600;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .empty-state {
+      padding: 60px 40px;
+      text-align: center;
+      color: #95a5a6;
+    }
+
+    .empty-state .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th {
+      background: #f8f9fa;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+      padding: 15px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .badge-warning { background: #ffc107; color: #212529; }
+    .badge-info { background: #17a2b8; color: white; }
+    .badge-success { background: #28a745; color: white; }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #229954;
+    }
+
+    .amount {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .alert {
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+
+    /* Tab content visibility */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <div th:replace="~{layout/header :: navbar}"></div>
+
+  <div class="content">
+    <div class="header">
+      <div class="page-title">
+        <h1>Quản lý thanh toán</h1>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>Quy trình:</strong> Chờ thanh toán → Đã chuyển → Đã nhận
+      <small>Tự động tạo vào ngày 1 hàng tháng</small>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab" th:classappend="${activeTab == null or activeTab == 'needs' ? 'active' : ''}"
+              onclick="switchTab('needs')">
+        Chờ thanh toán (<span th:text="${#lists.size(needsPayment)}">0</span>)
+      </button>
+      <button class="tab" th:classappend="${activeTab == 'paid' ? 'active' : ''}"
+              onclick="switchTab('paid')">
+        Đã chuyển (<span th:text="${#lists.size(paid)}">0</span>)
+      </button>
+      <button class="tab" th:classappend="${activeTab == 'received' ? 'active' : ''}"
+              onclick="switchTab('received')">
+        Đã nhận (<span th:text="${#lists.size(received)}">0</span>)
+      </button>
+    </div>
+
+    <!-- NEEDS_PAYMENT Tab -->
+    <div class="tab-content" th:classappend="${activeTab == null or activeTab == 'needs' ? 'active' : ''}" id="needs-tab">
+      <div class="card">
+        <div th:if="${!needsPayment.isEmpty()}">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Seller</th>
+                <th>Email</th>
+                <th>Số tiền</th>
+                <th>Ngày tạo</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="payout : ${needsPayment}">
+                <td th:text="${payout.sellerUsername}">username</td>
+                <td th:text="${payout.sellerEmail}">email@example.com</td>
+                <td>
+                  <span class="amount" th:text="${#numbers.formatInteger(payout.amount, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                </td>
+                <td th:text="${#temporals.format(payout.createdAt, 'dd/MM/yyyy')}">01/01/2026</td>
+                <td>
+                  <form th:action="@{/admin/payouts/{payoutId}/mark-paid(payoutId=${payout.id})}"
+                        method="post"
+                        onsubmit="return confirm('Bạn đã chuyển khoản cho người bán này chưa?')">
+                    <button type="submit" class="btn btn-success">✓ Đã thanh toán</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div th:if="${needsPayment.isEmpty()}" class="empty-state">
+          <div class="icon">📋</div>
+          <p>Không có khoản thanh toán nào chờ xử lý</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAID Tab -->
+    <div class="tab-content" th:classappend="${activeTab == 'paid' ? 'active' : ''}" id="paid-tab">
+      <div class="card">
+        <div th:if="${!paid.isEmpty()}">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Seller</th>
+                <th>Email</th>
+                <th>Số tiền</th>
+                <th>Ngày chuyển</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="payout : ${paid}">
+                <td th:text="${payout.sellerUsername}">username</td>
+                <td th:text="${payout.sellerEmail}">email@example.com</td>
+                <td>
+                  <span class="amount" th:text="${#numbers.formatInteger(payout.amount, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                </td>
+                <td th:text="${#temporals.format(payout.paidAt, 'dd/MM/yyyy')}">01/01/2026</td>
+                <td>
+                  <span class="badge badge-info">⏳ Chờ người bán xác nhận</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div th:if="${paid.isEmpty()}" class="empty-state">
+          <div class="icon">⏳</div>
+          <p>Không có khoản nào đang chờ xác nhận</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECEIVED Tab -->
+    <div class="tab-content" th:classappend="${activeTab == 'received' ? 'active' : ''}" id="received-tab">
+      <div class="card">
+        <div th:if="${!received.isEmpty()}">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Seller</th>
+                <th>Số tiền</th>
+                <th>Ngày chuyển</th>
+                <th>Ngày nhận</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="payout : ${received}">
+                <td th:text="${payout.sellerUsername}">username</td>
+                <td>
+                  <span class="amount" th:text="${#numbers.formatInteger(payout.amount, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                </td>
+                <td th:text="${#temporals.format(payout.paidAt, 'dd/MM/yyyy')}">01/01/2026</td>
+                <td th:text="${#temporals.format(payout.receivedAt, 'dd/MM/yyyy')}">05/01/2026</td>
+                <td>
+                  <span class="badge badge-success">✓ Hoàn thành</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div th:if="${received.isEmpty()}" class="empty-state">
+          <div class="icon">✓</div>
+          <p>Chưa có khoản nào hoàn thành</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+      // Show selected tab
+      document.getElementById(tabName + '-tab').classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

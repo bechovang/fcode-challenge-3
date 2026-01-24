@@ -66,4 +66,8 @@ public interface GameAccountRepository extends JpaRepository<GameAccount, Long> 
            "WHERE g.id = :id " +
            "  AND g.status IN ('APPROVED', 'SOLD')")
     Optional<ListingDetailDto> findDetailById(@Param("id") Long id);
+
+    // Story 3.4: Payout System - Get distinct seller IDs who have sold listings
+    @Query("SELECT DISTINCT g.sellerId FROM GameAccount g WHERE g.status = :status")
+    List<Long> findDistinctSellerIdsByStatus(@Param("status") ListingStatus status);
 }

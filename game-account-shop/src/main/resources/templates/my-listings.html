@@ -96,6 +96,62 @@
     .badge-APPROVED { background-color: #28a745; color: #fff; }
     .badge-SOLD { background-color: #6c757d; color: #fff; }
     .badge-REJECTED { background-color: #dc3545; color: #fff; }
+
+    /* Pending Payout Alert (Story 3.4) */
+    .pending-payout-alert {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #17a2b8;
+    }
+
+    .pending-payout-alert strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .pending-payout-amount {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0c5460;
+    }
+
+    .btn-confirm {
+      background: #27ae60;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    .btn-confirm:hover {
+      background: #229954;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #28a745;
+    }
+
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #dc3545;
+    }
   </style>
 </head>
 <body>
@@ -110,6 +166,26 @@
       <span th:text="${#numbers.formatInteger(profit, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span>
       <small style="color: #0c5232;"> (Sau khi trừ 10% phí nền tảng)</small>
     </div>
+
+    <!-- Pending Payout Alert (Story 3.4: Admin Payout System) -->
+    <div th:if="${payoutSummary != null and payoutSummary.pendingCount > 0}" class="pending-payout-alert">
+      <strong>💰 Bạn có khoản thanh toán đang chờ xác nhận!</strong>
+      <div>Số tiền: <span class="pending-payout-amount" th:text="${#numbers.formatInteger(payoutSummary.totalPendingAmount, 3, 'POINT')} + ' VNĐ'">0 VNĐ</span></div>
+      <div style="margin-top: 10px;">
+        <form th:each="item : ${payoutSummary.pendingPayouts}"
+              th:action="@{/my-listings/payouts/{payoutId}/confirm-received(payoutId=${item.payoutId})}"
+              method="post"
+              onsubmit="return confirm('Bạn đã nhận được số tiền ' + [[${item.amount}]] + ' VNĐ chưa?')"
+              style="display: inline;">
+          <button type="submit" class="btn-confirm">✓ Xác nhận đã nhận tiền</button>
+        </form>
+      </div>
+      <small style="display: block; margin-top: 10px; opacity: 0.8;">Chỉ nhấn nút này khi bạn đã nhận được tiền trong tài khoản ngân hàng</small>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div th:if="${successMessage}" class="alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert-danger" th:text="${errorMessage}"></div>
 
     <!-- Status Filter -->
     <div class="filter-section">

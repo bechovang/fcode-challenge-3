@@ -471,4 +471,154 @@ public class EmailService {
             return String.format("%,.2f", amount.doubleValue());
         }
     }
+
+    /**
+     * Send email to seller when admin marks payout as PAID
+     * Story 3.4: Admin Payout System
+     * @param toEmail Seller's email address
+     * @param amount Payout amount
+     * @param payoutId Payout ID (e.g., "PAYOUT123")
+     */
+    @Async
+    public void sendPayoutPaidEmail(String toEmail, BigDecimal amount, String payoutId) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("💰 Thanh toán tiền bán tài khoản - Chờ nhận tiền");
+
+            String htmlContent = buildPayoutPaidEmail(amount, payoutId);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Payout paid email sent to: {} for amount: {}", toEmail, amount);
+
+        } catch (Exception e) {
+            log.error("Failed to send payout paid email to: {}", toEmail, e);
+            // Don't throw - email failure shouldn't block the payout update
+        }
+    }
+
+    /**
+     * Send email to admin when seller confirms receipt
+     * Story 3.4: Admin Payout System
+     * @param adminEmail Admin's email address
+     * @param sellerUsername Seller's username
+     * @param amount Payout amount
+     */
+    @Async
+    public void sendPayoutReceivedEmail(String adminEmail, String sellerUsername, BigDecimal amount) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(adminEmail);
+            helper.setSubject("✓ Người bán đã nhận tiền - " + sellerUsername);
+
+            String htmlContent = buildPayoutReceivedEmail(sellerUsername, amount);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Payout received email sent to admin for seller: {}, amount: {}", sellerUsername, amount);
+
+        } catch (Exception e) {
+            log.error("Failed to send payout received email to admin", e);
+            // Don't throw - email failure shouldn't block the payout update
+        }
+    }
+
+    private String buildPayoutPaidEmail(BigDecimal amount, String payoutId) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #3498db; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+                    .amount-box { background: #d1ecf1; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
+                    .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 15px 0; }
+                    .button { display: inline-block; padding: 12px 30px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; }
+                    .footer { text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>💰 Thanh toán tiền bán tài khoản</h1>
+                    </div>
+                    <div class="content">
+                        <p>Chào bạn,</p>
+                        <p>Chúng tôi đã chuyển khoản thanh toán tiền bán tài khoản của bạn.</p>
+
+                        <div class="amount-box">
+                            <h3>Số tiền thanh toán:</h3>
+                            <p style="font-size: 32px; color: #3498db; font-weight: bold;">%s VNĐ</p>
+                            <p><strong>Mã thanh toán:</strong> %s</p>
+                        </div>
+
+                        <div class="warning">
+                            <strong>⏰ Quan trọng:</strong>
+                            <p>Vui lòng kiểm tra tài khoản ngân hàng của bạn trong vòng <strong>5 ngày</strong>.</p>
+                            <p>Sau khi nhận được tiền, hãy đăng nhập vào website và nhấn nút <strong>"Xác nhận đã nhận tiền"</strong> trên trang <em>Tài khoản của tôi</em>.</p>
+                        </div>
+
+                        <p>Nếu sau 5 ngày bạn仍未 nhận được tiền, vui lòng phản hồi email này.</p>
+
+                        <div style="text-align: center; margin: 20px 0;">
+                            <a href="%s/my-listings" class="button">Đi đến trang Tài khoản của tôi</a>
+                        </div>
+
+                        <p>Cảm ơn bạn đã tham gia cùng Game Account Shop!</p>
+                    </div>
+                    <div class="footer">
+                        <p>Email này được gửi tự động từ Game Account Shop.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """, formatAmount(amount), payoutId, baseUrl);
+    }
+
+    private String buildPayoutReceivedEmail(String sellerUsername, BigDecimal amount) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #27ae60; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+                    .info-box { background: white; padding: 15px; margin: 15px 0; border-radius: 4px; }
+                    .footer { text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>✓ Thanh toán đã hoàn thành</h1>
+                    </div>
+                    <div class="content">
+                        <p>Người bán <strong>%s</strong> đã xác nhận nhận được khoản thanh toán.</p>
+
+                        <div class="info-box">
+                            <p><strong>Số tiền:</strong> %s VNĐ</p>
+                            <p><strong>Trạng thái:</strong> <span style="color: #27ae60; font-weight: bold;">Đã nhận</span></p>
+                        </div>
+
+                        <p>Giao dịch thanh toán đã hoàn thành thành công.</p>
+                    </div>
+                    <div class="footer">
+                        <p>Email này được gửi tự động từ Game Account Shop.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """, sellerUsername, formatAmount(amount));
+    }
 }

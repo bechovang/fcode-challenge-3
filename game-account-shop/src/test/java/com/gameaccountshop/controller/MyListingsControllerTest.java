@@ -1,8 +1,11 @@
 package com.gameaccountshop.controller;
 
 import com.gameaccountshop.dto.MyListingDto;
+import com.gameaccountshop.dto.SellerPayoutSummaryDto;
+import com.gameaccountshop.entity.Payout;
 import com.gameaccountshop.security.CustomUserDetails;
 import com.gameaccountshop.service.GameAccountService;
+import com.gameaccountshop.service.PayoutService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.ui.Model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +33,9 @@ class MyListingsControllerTest {
     @Mock
     private GameAccountService gameAccountService;
 
+    @Mock
+    private PayoutService payoutService;
+
     @InjectMocks
     private MyListingsController controller;
 
@@ -36,6 +43,8 @@ class MyListingsControllerTest {
     private Model model;
 
     private List<MyListingDto> testListings;
+    private List<Payout> emptyPendingPayouts;
+    private SellerPayoutSummaryDto emptyPayoutSummary;
     private Long testUserId = 100L;
 
     @BeforeEach
@@ -62,6 +71,10 @@ class MyListingsControllerTest {
         );
 
         testListings = Arrays.asList(listing1, listing2);
+
+        // Empty pending payouts (default state)
+        emptyPendingPayouts = Collections.emptyList();
+        emptyPayoutSummary = new SellerPayoutSummaryDto(BigDecimal.ZERO, 0, List.of());
     }
 
     @Test
@@ -70,6 +83,8 @@ class MyListingsControllerTest {
         when(gameAccountService.findMyListings(eq(testUserId), isNull()))
             .thenReturn(testListings);
         when(gameAccountService.calculateProfit(testUserId)).thenReturn(900000L);
+        when(payoutService.getPendingPayoutsForSeller(testUserId)).thenReturn(emptyPendingPayouts);
+        when(payoutService.getSellerPayoutSummary(testUserId)).thenReturn(emptyPayoutSummary);
 
         // Create a mock authentication with CustomUserDetails principal
         Authentication authentication = mock(Authentication.class);
@@ -88,6 +103,8 @@ class MyListingsControllerTest {
         assertEquals("my-listings", viewName);
         verify(gameAccountService, times(1)).findMyListings(eq(testUserId), isNull());
         verify(gameAccountService, times(1)).calculateProfit(testUserId);
+        verify(payoutService).getPendingPayoutsForSeller(testUserId);
+        verify(payoutService).getSellerPayoutSummary(testUserId);
         verify(model).addAttribute("listings", testListings);
         verify(model).addAttribute("profit", 900000L);
         verify(model).addAttribute("selectedStatus", null);
@@ -99,6 +116,8 @@ class MyListingsControllerTest {
         when(gameAccountService.findMyListings(eq(testUserId), eq("APPROVED")))
             .thenReturn(Collections.singletonList(testListings.get(1)));
         when(gameAccountService.calculateProfit(testUserId)).thenReturn(900000L);
+        when(payoutService.getPendingPayoutsForSeller(testUserId)).thenReturn(emptyPendingPayouts);
+        when(payoutService.getSellerPayoutSummary(testUserId)).thenReturn(emptyPayoutSummary);
 
         Authentication authentication = mock(Authentication.class);
         CustomUserDetails userDetails = new CustomUserDetails(
@@ -124,6 +143,8 @@ class MyListingsControllerTest {
         when(gameAccountService.findMyListings(eq(testUserId), any()))
             .thenReturn(Collections.emptyList());
         when(gameAccountService.calculateProfit(testUserId)).thenReturn(0L);
+        when(payoutService.getPendingPayoutsForSeller(testUserId)).thenReturn(emptyPendingPayouts);
+        when(payoutService.getSellerPayoutSummary(testUserId)).thenReturn(emptyPayoutSummary);
 
         Authentication authentication = mock(Authentication.class);
         CustomUserDetails userDetails = new CustomUserDetails(
@@ -150,6 +171,8 @@ class MyListingsControllerTest {
         when(gameAccountService.findMyListings(eq(testUserId), any()))
             .thenReturn(testListings);
         when(gameAccountService.calculateProfit(testUserId)).thenReturn(1350000L);
+        when(payoutService.getPendingPayoutsForSeller(testUserId)).thenReturn(emptyPendingPayouts);
+        when(payoutService.getSellerPayoutSummary(testUserId)).thenReturn(emptyPayoutSummary);
 
         Authentication authentication = mock(Authentication.class);
         CustomUserDetails userDetails = new CustomUserDetails(
@@ -174,6 +197,8 @@ class MyListingsControllerTest {
         when(gameAccountService.findMyListings(eq(testUserId), eq("All")))
             .thenReturn(testListings);
         when(gameAccountService.calculateProfit(testUserId)).thenReturn(900000L);
+        when(payoutService.getPendingPayoutsForSeller(testUserId)).thenReturn(emptyPendingPayouts);
+        when(payoutService.getSellerPayoutSummary(testUserId)).thenReturn(emptyPayoutSummary);
 
         Authentication authentication = mock(Authentication.class);
         CustomUserDetails userDetails = new CustomUserDetails(
@@ -210,6 +235,8 @@ class MyListingsControllerTest {
         when(gameAccountService.findMyListings(eq(testUserId), any()))
             .thenReturn(testListings);
         when(gameAccountService.calculateProfit(testUserId)).thenReturn(900000L);
+        when(payoutService.getPendingPayoutsForSeller(testUserId)).thenReturn(emptyPendingPayouts);
+        when(payoutService.getSellerPayoutSummary(testUserId)).thenReturn(emptyPayoutSummary);
 
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(testUserId); // Long directly
