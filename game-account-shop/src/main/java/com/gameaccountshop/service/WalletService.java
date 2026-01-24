@@ -1,11 +1,14 @@
 package com.gameaccountshop.service;
 
 import com.gameaccountshop.entity.Transaction;
+import com.gameaccountshop.entity.User;
 import com.gameaccountshop.entity.Wallet;
 import com.gameaccountshop.enums.TransactionStatus;
 import com.gameaccountshop.enums.TransactionType;
 import com.gameaccountshop.exception.InsufficientBalanceException;
+import com.gameaccountshop.exception.ResourceNotFoundException;
 import com.gameaccountshop.repository.TransactionRepository;
+import com.gameaccountshop.repository.UserRepository;
 import com.gameaccountshop.repository.WalletRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import java.math.BigDecimal;
 /**
  * Wallet service
  * Story 3.1: Wallet System - Manage user wallet balance
+ * Story 3.2: Top-up Approval Email Notifications - Email notifications for top-up approval/rejection
  */
 @Service
 @Slf4j
@@ -23,11 +27,17 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;  // Story 3.2
+    private final EmailService emailService;      // Story 3.2
 
     public WalletService(WalletRepository walletRepository,
-                          TransactionRepository transactionRepository) {
+                          TransactionRepository transactionRepository,
+                          UserRepository userRepository,      // Story 3.2
+                          EmailService emailService) {       // Story 3.2
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;                 // Story 3.2
+        this.emailService = emailService;                     // Story 3.2
     }
 
     /**
@@ -160,6 +170,7 @@ public class WalletService {
 
     /**
      * Approve a top-up transaction and add balance to user's wallet
+     * Story 3.2: Send email notification after approval
      * @param transactionId Transaction ID to approve
      * @param adminId Admin user ID who is approving
      */
@@ -181,17 +192,39 @@ public class WalletService {
         // Add balance to user's wallet
         addBalance(transaction.getBuyerId(), transaction.getAmount());
 
+        // Get new balance for email
+        BigDecimal newBalance = getBalance(transaction.getBuyerId());
+
         // Update transaction status
         transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setApprovedBy(adminId);
         transaction.setApprovedAt(java.time.LocalDateTime.now());
         transactionRepository.save(transaction);
 
+        // Story 3.2: Send email notification
+        try {
+            User user = userRepository.findById(transaction.getBuyerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+
+            String transactionIdStr = "TXN" + transaction.getId();
+            emailService.sendTopUpApprovedEmail(
+                    user.getEmail(),
+                    transaction.getAmount(),
+                    newBalance,
+                    transactionIdStr
+            );
+            log.info("Top-up approval email sent to user: {}", transaction.getBuyerId());
+        } catch (Exception e) {
+            log.error("Failed to send top-up approval email for transaction: {}", transactionId, e);
+            // Don't throw - transaction is already approved
+        }
+
         log.info("Top-up transaction {} approved, balance added for user: {}", transactionId, transaction.getBuyerId());
     }
 
     /**
      * Reject a top-up transaction
+     * Story 3.2: Send email notification after rejection
      * @param transactionId Transaction ID to reject
      * @param adminId Admin user ID who is rejecting
      * @param reason Rejection reason
@@ -217,6 +250,24 @@ public class WalletService {
         transaction.setApprovedAt(java.time.LocalDateTime.now());
         transaction.setRejectionReason(reason);
         transactionRepository.save(transaction);
+
+        // Story 3.2: Send email notification
+        try {
+            User user = userRepository.findById(transaction.getBuyerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+
+            String transactionIdStr = "TXN" + transaction.getId();
+            emailService.sendTopUpRejectedEmail(
+                    user.getEmail(),
+                    transaction.getAmount(),
+                    reason,
+                    transactionIdStr
+            );
+            log.info("Top-up rejection email sent to user: {}", transaction.getBuyerId());
+        } catch (Exception e) {
+            log.error("Failed to send top-up rejection email for transaction: {}", transactionId, e);
+            // Don't throw - transaction is already rejected
+        }
 
         log.info("Top-up transaction {} rejected", transactionId);
     }

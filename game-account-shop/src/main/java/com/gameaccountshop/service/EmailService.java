@@ -9,6 +9,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 @Slf4j
 public class EmailService {
@@ -18,6 +20,9 @@ public class EmailService {
 
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
+
+    @Value("${app.support-email:support@gameaccountshop.com}")
+    private String supportEmail;
 
     private final JavaMailSender mailSender;
 
@@ -289,5 +294,181 @@ public class EmailService {
             </body>
             </html>
             """, gameName, accountRank, username, password, notesSection);
+    }
+
+    /**
+     * Send top-up approval email to user
+     * Story 3.2: Top-up Approval Email Notifications
+     * @param toEmail User's email address
+     * @param amount Amount that was added to wallet
+     * @param newBalance New wallet balance after top-up
+     * @param transactionId Transaction ID (TXN format)
+     */
+    @Async
+    public void sendTopUpApprovedEmail(String toEmail, BigDecimal amount,
+                                       BigDecimal newBalance, String transactionId) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("✅ Yêu cầu nạp tiền của bạn đã được duyệt!");
+
+            String htmlContent = buildTopUpApprovedEmail(amount, newBalance, transactionId);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Top-up approval email sent to: {} for amount: {}", toEmail, amount);
+
+        } catch (Exception e) {
+            log.error("Failed to send top-up approval email to: {}", toEmail, e);
+            // Don't throw - email failure shouldn't block the top-up approval
+        }
+    }
+
+    /**
+     * Send top-up rejection email to user
+     * Story 3.2: Top-up Approval Email Notifications
+     * @param toEmail User's email address
+     * @param amount Amount that was rejected
+     * @param reason Rejection reason
+     * @param transactionId Transaction ID (TXN format)
+     */
+    @Async
+    public void sendTopUpRejectedEmail(String toEmail, BigDecimal amount,
+                                       String reason, String transactionId) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("❌ Yêu cầu nạp tiền của bạn đã bị từ chối");
+
+            String htmlContent = buildTopUpRejectedEmail(amount, reason, transactionId);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Top-up rejection email sent to: {} for amount: {}", toEmail, amount);
+
+        } catch (Exception e) {
+            log.error("Failed to send top-up rejection email to: {}", toEmail, e);
+            // Don't throw - email failure shouldn't block the top-up rejection
+        }
+    }
+
+    private String buildTopUpApprovedEmail(BigDecimal amount, BigDecimal newBalance, String transactionId) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #27ae60; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+                    .amount-box { background: #d4edda; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
+                    .balance-box { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; }
+                    .button { display: inline-block; padding: 12px 30px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; }
+                    .footer { text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>✅ Yêu cầu nạp tiền của bạn đã được duyệt!</h1>
+                    </div>
+                    <div class="content">
+                        <p>Chúc mừng! Yêu cầu nạp tiền của bạn đã được xác nhận và số tiền đã được thêm vào ví.</p>
+
+                        <div class="amount-box">
+                            <h3>Số tiền đã nạp:</h3>
+                            <p style="font-size: 32px; color: #27ae60; font-weight: bold;">%s VNĐ</p>
+                        </div>
+
+                        <div class="balance-box">
+                            <p><strong>Mã giao dịch:</strong> %s</p>
+                            <p><strong>Số dư ví mới:</strong> <span style="font-size: 18px; color: #27ae60; font-weight: bold;">%s VNĐ</span></p>
+                        </div>
+
+                        <div style="text-align: center; margin: 20px 0;">
+                            <a href="%s/wallet" class="button">Xem ví của tôi</a>
+                        </div>
+
+                        <p>Bạn giờ có thể sử dụng số dư để mua tài khoản game trên hệ thống.</p>
+                    </div>
+                    <div class="footer">
+                        <p>Email này được gửi tự động từ Game Account Shop.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """, formatAmount(amount), transactionId, formatAmount(newBalance), baseUrl);
+    }
+
+    private String buildTopUpRejectedEmail(BigDecimal amount, String reason, String transactionId) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #e74c3c; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+                    .info-box { background: white; padding: 15px; margin: 15px 0; border-radius: 4px; }
+                    .reason { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 15px 0; }
+                    .footer { text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>❌ Yêu cầu nạp tiền của bạn đã bị từ chối</h1>
+                    </div>
+                    <div class="content">
+                        <p>Rất tiếc, yêu cầu nạp tiền của bạn đã bị từ chối sau khi xem xét.</p>
+
+                        <div class="info-box">
+                            <p><strong>Mã giao dịch:</strong> %s</p>
+                            <p><strong>Số tiền:</strong> %s VNĐ</p>
+                        </div>
+
+                        <div class="reason">
+                            <h3>Lý do từ chối:</h3>
+                            <p>%s</p>
+                        </div>
+
+                        <p>Nếu bạn nghĩ đây là sự nhầm lẫn, vui lòng liên hệ admin kèm ảnh chụp thanh toán.</p>
+
+                        <p>Thông tin liên hệ:</p>
+                        <ul>
+                            <li>Email: %s</li>
+                            <li>Hoặc phản hồi email này</li>
+                        </ul>
+                    </div>
+                    <div class="footer">
+                        <p>Email này được gửi tự động từ Game Account Shop.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """, transactionId, String.format("%,d", amount.longValue()), reason, supportEmail);
+    }
+
+    /**
+     * Format BigDecimal amount for Vietnamese display
+     * @param amount Amount to format
+     * @return Formatted string with thousand separators
+     */
+    private String formatAmount(BigDecimal amount) {
+        // Format: use BigInteger for large numbers, preserve decimals if present
+        if (amount.scale() <= 0) {
+            return String.format("%,d", amount.longValue());
+        } else {
+            // Has decimal places - use proper decimal formatting
+            return String.format("%,.2f", amount.doubleValue());
+        }
     }
 }
